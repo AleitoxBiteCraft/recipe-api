@@ -7,7 +7,7 @@ public record DishDetailResponseDto(
         Integer id,
         String name,
         String description,
-        List<RecipeResponseDto> recipes,
+        List<DishDetailRecipeResponseDto> recipes,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

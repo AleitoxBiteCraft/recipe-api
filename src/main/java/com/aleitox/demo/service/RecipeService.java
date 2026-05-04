@@ -1,6 +1,7 @@
 package com.aleitox.demo.service;
 
 import com.aleitox.demo.domain.RecipeComponentType;
+import com.aleitox.demo.dto.DishDetailRecipeResponseDto;
 import com.aleitox.demo.dto.RecipeComponentRequestDto;
 import com.aleitox.demo.dto.RecipeComponentResponseDto;
 import com.aleitox.demo.dto.RecipeRequestDto;
@@ -25,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -91,6 +93,39 @@ public class RecipeService {
                 recipe,
                 recipeComponentRepository.findByRecipeId(id),
                 recipeStepRepository.findByRecipeIdOrderByStepOrderAsc(id)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public DishDetailRecipeResponseDto toDishDetailRecipeTree(Integer recipeId) {
+        Objects.requireNonNull(recipeId, "Id cannot be null");
+        return buildDishDetailRecipeTree(recipeId, new HashSet<>());
+    }
+
+    private DishDetailRecipeResponseDto buildDishDetailRecipeTree(Integer recipeId, Set<Integer> expandedRecipeIds) {
+        RecipeEntity recipe = findRecipeById(recipeId);
+        if (!expandedRecipeIds.add(recipeId)) {
+            return new DishDetailRecipeResponseDto(
+                    recipe.getId(),
+                    recipe.getName(),
+                    recipe.getDescription(),
+                    List.of()
+            );
+        }
+        List<RecipeComponentEntity> components = recipeComponentRepository.findByRecipeId(recipeId);
+        List<DishDetailRecipeResponseDto> subRecipes = new ArrayList<>();
+        for (RecipeComponentEntity component : components) {
+            if (component.getComponentType() != RecipeComponentType.RECIPE || component.getChildRecipe() == null) {
+                continue;
+            }
+            Integer childRecipeId = component.getChildRecipe().getId();
+            subRecipes.add(buildDishDetailRecipeTree(childRecipeId, expandedRecipeIds));
+        }
+        return new DishDetailRecipeResponseDto(
+                recipe.getId(),
+                recipe.getName(),
+                recipe.getDescription(),
+                List.copyOf(subRecipes)
         );
     }
 

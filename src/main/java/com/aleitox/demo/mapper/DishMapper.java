@@ -4,7 +4,7 @@ import com.aleitox.demo.domain.Dish;
 import com.aleitox.demo.dto.DishDetailResponseDto;
 import com.aleitox.demo.dto.DishRequestDto;
 import com.aleitox.demo.dto.DishResponseDto;
-import com.aleitox.demo.dto.RecipeResponseDto;
+import com.aleitox.demo.dto.DishDetailRecipeResponseDto;
 import com.aleitox.demo.entity.DishEntity;
 import org.springframework.stereotype.Component;
 
@@ -53,7 +53,7 @@ public class DishMapper {
         );
     }
 
-    public DishDetailResponseDto toDetailResponseDto(Dish domain, List<RecipeResponseDto> recipes) {
+    public DishDetailResponseDto toDetailResponseDto(Dish domain, List<DishDetailRecipeResponseDto> recipes) {
         return new DishDetailResponseDto(
                 domain.id(),
                 domain.name(),

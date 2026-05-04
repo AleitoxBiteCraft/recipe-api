@@ -43,12 +43,6 @@ INSERT INTO recipe (
 INSERT INTO dish_recipe (
     id, dish_id, recipe_id
 ) VALUES (
-    1, 1, 1
-);
-
-INSERT INTO dish_recipe (
-    id, dish_id, recipe_id
-) VALUES (
     2, 1, 2
 );
 

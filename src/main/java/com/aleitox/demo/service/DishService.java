@@ -50,7 +50,7 @@ public class DishService {
         DishEntity entity = findEntityById(id);
         var dish = dishMapper.toDomain(entity);
         var recipes = dishRecipeRepository.findRecipeIdsByDishIdOrderByLinkIdAsc(id).stream()
-                .map(recipeService::getById)
+                .map(recipeService::toDishDetailRecipeTree)
                 .toList();
         return dishMapper.toDetailResponseDto(dish, recipes);
     }
