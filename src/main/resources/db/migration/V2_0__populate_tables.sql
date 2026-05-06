@@ -97,3 +97,150 @@ INSERT INTO recipe_step (
     (8, 2, 2, 'Picar jalapeno sin semillas, menta y cilantro. Tostar y picar el mani.'),
     (9, 2, 3, 'Mezclar todos los ingredientes de la ensalada (excepto mani) con la mitad del aderezo y reposar 5 minutos.'),
     (10, 2, 4, 'Antes de servir, agregar el resto del aderezo, mezclar y terminar con mani.');
+
+-- 2.5 Populate 'ingredient' with Asian Short Ribs ingredients.
+-- Reused existing ingredients: Azucar (15), Ajo (16), Vinagre de arroz (12).
+INSERT INTO ingredient (
+    id, name, calories_per_100g, proteins_per_100g, carbohydrates_per_100g, fats_per_100g, nutrition_source
+) VALUES
+    (18, 'Costilla vacuna', 291.00, 18.10, 0.00, 24.50, 'USDA FoodData Central'),
+    (19, 'Salsa de soja', 53.00, 8.10, 4.90, 0.60, 'USDA FoodData Central'),
+    (20, 'Lemongrass', 99.00, 1.80, 25.30, 0.50, 'USDA FoodData Central'),
+    (21, 'Jengibre', 80.00, 1.80, 17.80, 0.80, 'USDA FoodData Central'),
+    (22, 'Cebolla de verdeo', 32.00, 1.80, 7.30, 0.20, 'USDA FoodData Central'),
+    (23, 'Jugo de naranja', 45.00, 0.70, 10.40, 0.20, 'USDA FoodData Central'),
+    (24, 'Limon', 29.00, 1.10, 9.30, 0.30, 'USDA FoodData Central'),
+    (25, 'Salsa hoisin', 220.00, 3.30, 45.20, 1.70, 'USDA FoodData Central'),
+    (26, 'Pasta de mani', 588.00, 25.00, 20.00, 50.00, 'USDA FoodData Central'),
+    (27, 'Miel', 304.00, 0.30, 82.40, 0.00, 'USDA FoodData Central'),
+    (28, 'Aceite de sesamo', 884.00, 0.00, 0.00, 100.00, 'USDA FoodData Central'),
+    (29, 'Salsa de chili', 84.00, 1.30, 17.30, 0.90, 'USDA FoodData Central');
+
+-- 2.6 Create dish and recipe for Asian Short Ribs.
+INSERT INTO dish (
+    id, name, description
+) VALUES (
+    2,
+    'Asian Short Ribs',
+    'Costillas braseadas estilo asiatico para 4 porciones, con salsa de soja, citricos y hoisin.'
+);
+
+INSERT INTO recipe (
+    id, name, description
+) VALUES (
+    4,
+    'Asian Short Ribs',
+    'Costilla vacuna dorada y cocida lentamente en horno con salsa de soja, aromáticos y hoisin.'
+);
+
+-- 2.6.1 Link Vietnamese tag to the recipe and recipe to dish.
+INSERT INTO recipe_tag (
+    id, recipe_id, tag_id
+) VALUES (
+    2, 4, 1
+);
+
+INSERT INTO dish_recipe (
+    id, dish_id, recipe_id
+) VALUES (
+    3, 2, 4
+);
+
+-- 2.7 Link ingredients in 'recipe_component' for Asian Short Ribs.
+INSERT INTO recipe_component (
+    id, recipe_id, component_type, ingredient_id, child_recipe_id, quantity, unit
+) VALUES
+    (20, 4, 'INGREDIENT', 18, null, 2000.00, 'g'),
+    (21, 4, 'INGREDIENT', 19, null, 250.00, 'ml'),
+    (22, 4, 'INGREDIENT', 12, null, 60.00, 'ml'),
+    (23, 4, 'INGREDIENT', 16, null, 9.00, 'g'),
+    (24, 4, 'INGREDIENT', 20, null, 20.00, 'g'),
+    (25, 4, 'INGREDIENT', 15, null, 100.00, 'g'),
+    (26, 4, 'INGREDIENT', 22, null, 75.00, 'g'),
+    (27, 4, 'INGREDIENT', 21, null, 15.00, 'g'),
+    (28, 4, 'INGREDIENT', 23, null, 60.00, 'ml'),
+    (29, 4, 'INGREDIENT', 24, null, 30.00, 'ml'),
+    (30, 4, 'INGREDIENT', 25, null, 60.00, 'ml');
+
+-- 2.8 Add step-by-step instructions in 'recipe_step' for Asian Short Ribs.
+INSERT INTO recipe_step (
+    id, recipe_id, step_order, description
+) VALUES
+    (11, 4, 1, 'Precalentar el horno a 150 C. Sacar la carne de la heladera 30 minutos antes, salpimentar y dorar en una sarten bien caliente.'),
+    (12, 4, 2, 'Pasar la carne dorada a una fuente apta horno y agregar salsa de soja, vinagre de arroz, ajo, lemongrass, azucar, cebolla de verdeo, jengibre, jugo de naranja, jugo de limon y salsa hoisin.'),
+    (13, 4, 3, 'Verificar que el liquido llegue a 3/4 de la altura de la carne. Si falta, completar con agua. Tapar con papel aluminio y hornear 3 horas aproximadamente hasta que se deshilache.'),
+    (14, 4, 4, 'Retirar la grasa de la superficie del liquido de coccion y reservar la carne.'),
+    (15, 4, 5, 'Reducir el liquido en hornalla hasta espesar y servir sobre la carne.');
+
+-- 2.9 Populate 'ingredient' with Thai Pineapple Rice ingredients.
+-- Reused existing ingredients: Salsa de soja (19), Fish sauce (13), Azucar (15),
+-- Aceite de girasol (14), Cebolla morada (3), Ajo (16), Jengibre (21),
+-- Pechuga de pollo (1), Morron rojo (4), Cebolla de verdeo (22), Limon (24).
+INSERT INTO ingredient (
+    id, name, calories_per_100g, proteins_per_100g, carbohydrates_per_100g, fats_per_100g, nutrition_source
+) VALUES
+    (30, 'Arroz basmati', 365.00, 7.10, 80.00, 0.70, 'USDA FoodData Central'),
+    (31, 'Anana', 50.00, 0.50, 13.10, 0.10, 'USDA FoodData Central'),
+    (32, 'Curry amarillo en polvo', 325.00, 14.30, 55.80, 14.00, 'USDA FoodData Central'),
+    (33, 'Langostinos', 99.00, 24.00, 0.20, 0.30, 'USDA FoodData Central');
+
+-- 2.10 Create dish and recipe for Thai Pineapple Rice.
+INSERT INTO dish (
+    id, name, description
+) VALUES (
+    3,
+    'Thai Pineapple Rice',
+    'Arroz thai salteado con anana, vegetales y salsa umami para 4 personas.'
+);
+
+INSERT INTO recipe (
+    id, name, description
+) VALUES (
+    5,
+    'Thai Pineapple Rice',
+    'Arroz basmati cocido y salteado con anana, vegetales, curry amarillo y langostinos.'
+);
+
+-- 2.10.1 Link Vietnamese tag to the recipe and recipe to dish.
+INSERT INTO recipe_tag (
+    id, recipe_id, tag_id
+) VALUES (
+    3, 5, 1
+);
+
+INSERT INTO dish_recipe (
+    id, dish_id, recipe_id
+) VALUES (
+    4, 3, 5
+);
+
+-- 2.11 Link ingredients in 'recipe_component' for Thai Pineapple Rice.
+INSERT INTO recipe_component (
+    id, recipe_id, component_type, ingredient_id, child_recipe_id, quantity, unit
+) VALUES
+    (31, 5, 'INGREDIENT', 30, null, 200.00, 'g'),
+    (32, 5, 'INGREDIENT', 31, null, 200.00, 'g'),
+    (33, 5, 'INGREDIENT', 19, null, 45.00, 'ml'),
+    (34, 5, 'INGREDIENT', 13, null, 45.00, 'ml'),
+    (35, 5, 'INGREDIENT', 15, null, 25.00, 'g'),
+    (36, 5, 'INGREDIENT', 32, null, 4.00, 'g'),
+    (37, 5, 'INGREDIENT', 14, null, 30.00, 'ml'),
+    (38, 5, 'INGREDIENT', 3, null, 120.00, 'g'),
+    (39, 5, 'INGREDIENT', 16, null, 12.00, 'g'),
+    (40, 5, 'INGREDIENT', 21, null, 8.00, 'g'),
+    (41, 5, 'INGREDIENT', 33, null, 250.00, 'g'),
+    (42, 5, 'INGREDIENT', 4, null, 120.00, 'g'),
+    (43, 5, 'INGREDIENT', 22, null, 100.00, 'g');
+
+-- 2.12 Add step-by-step instructions in 'recipe_step' for Thai Pineapple Rice.
+INSERT INTO recipe_step (
+    id, recipe_id, step_order, description
+) VALUES
+    (16, 5, 1, 'En una olla a fuego medio agregar un chorro de aceite y saltear el arroz 2 minutos. Agregar 350 cc de agua hirviendo y sal.'),
+    (17, 5, 2, 'Cuando vuelva a hervir, bajar a minimo y cocinar tapado hasta que absorba el agua. Apagar el fuego y reservar.'),
+    (18, 5, 3, 'Cortar la anana en cubos chicos y reservar.'),
+    (19, 5, 4, 'Mezclar en un bowl salsa de soja, fish sauce, azucar y curry amarillo.'),
+    (20, 5, 5, 'Calentar un wok a fuego fuerte, agregar aceite y cocinar los langostinos en tandas 1 minuto por lado hasta que cambien de color. Retirar.'),
+    (21, 5, 6, 'En el mismo wok saltear cebolla, jengibre y ajo por 30 segundos. Agregar morron y cocinar 1 minuto.'),
+    (22, 5, 7, 'Agregar la mezcla de salsas, incorporar anana y cebolla de verdeo, cocinar 1 minuto.'),
+    (23, 5, 8, 'Agregar el arroz cocido, mezclar bien y rectificar condimentos antes de servir.');
