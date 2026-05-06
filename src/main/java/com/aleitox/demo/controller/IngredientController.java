@@ -39,18 +39,18 @@ public class IngredientController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<IngredientResponseDto> getById(@PathVariable Integer id) {
+    public ResponseEntity<IngredientResponseDto> getById(@PathVariable("id") Integer id) {
         return ResponseEntity.ok(ingredientService.getById(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<IngredientResponseDto> update(@PathVariable Integer id,
+    public ResponseEntity<IngredientResponseDto> update(@PathVariable("id") Integer id,
                                                         @Valid @RequestBody IngredientRequestDto request) {
         return ResponseEntity.ok(ingredientService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") Integer id) {
         ingredientService.delete(id);
         return ResponseEntity.noContent().build();
     }

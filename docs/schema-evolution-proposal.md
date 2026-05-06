@@ -1,0 +1,198 @@
+# Schema Evolution Proposal (Guide / Technical Debt)
+
+This document proposes a future schema evolution for recipes metadata and search.
+It is intentionally **not implemented** yet. Use it as a reference for future Flyway migrations.
+
+## Goals
+
+- Keep current model stable while loading recipes.
+- Avoid duplicate records (recipes, tags, relations).
+- Add metadata for discoverability and procurement.
+
+## 1) Cooking Courses (Recipe Origin)
+
+```sql
+CREATE TABLE course (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    provider VARCHAR(255) NULL,
+    edition VARCHAR(100) NULL,
+    started_at DATE NULL,
+    ended_at DATE NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_course_name_provider_edition
+        UNIQUE (name, provider, edition)
+);
+
+CREATE TABLE recipe_course (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    recipe_id INT NOT NULL,
+    course_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_recipe_course_recipe
+        FOREIGN KEY (recipe_id) REFERENCES recipe(id),
+
+    CONSTRAINT fk_recipe_course_course
+        FOREIGN KEY (course_id) REFERENCES course(id),
+
+    CONSTRAINT uq_recipe_course
+        UNIQUE (recipe_id, course_id)
+);
+
+CREATE INDEX idx_recipe_course_recipe_id
+    ON recipe_course(recipe_id);
+
+CREATE INDEX idx_recipe_course_course_id
+    ON recipe_course(course_id);
+```
+
+## 2) Tags for Search and Classification
+
+```sql
+CREATE TABLE tag (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_tag_name UNIQUE (name)
+);
+
+CREATE TABLE recipe_tag (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    recipe_id INT NOT NULL,
+    tag_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_recipe_tag_recipe
+        FOREIGN KEY (recipe_id) REFERENCES recipe(id),
+
+    CONSTRAINT fk_recipe_tag_tag
+        FOREIGN KEY (tag_id) REFERENCES tag(id),
+
+    CONSTRAINT uq_recipe_tag
+        UNIQUE (recipe_id, tag_id)
+);
+
+CREATE INDEX idx_recipe_tag_recipe_id
+    ON recipe_tag(recipe_id);
+
+CREATE INDEX idx_recipe_tag_tag_id
+    ON recipe_tag(tag_id);
+```
+
+## 3) Ingredient Sources (Where to Buy)
+
+```sql
+CREATE TABLE supplier (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    supplier_type VARCHAR(50) NULL,
+    website_url VARCHAR(500) NULL,
+    location_hint VARCHAR(255) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_supplier_name_location
+        UNIQUE (name, location_hint)
+);
+
+CREATE TABLE ingredient_supplier (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ingredient_id INT NOT NULL,
+    supplier_id INT NOT NULL,
+    product_name VARCHAR(255) NULL,
+    product_url VARCHAR(500) NULL,
+    notes TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_ingredient_supplier_ingredient
+        FOREIGN KEY (ingredient_id) REFERENCES ingredient(id),
+
+    CONSTRAINT fk_ingredient_supplier_supplier
+        FOREIGN KEY (supplier_id) REFERENCES supplier(id),
+
+    CONSTRAINT uq_ingredient_supplier
+        UNIQUE (ingredient_id, supplier_id)
+);
+
+CREATE INDEX idx_ingredient_supplier_ingredient_id
+    ON ingredient_supplier(ingredient_id);
+
+CREATE INDEX idx_ingredient_supplier_supplier_id
+    ON ingredient_supplier(supplier_id);
+```
+
+## 4) Required Tools by Recipe
+
+```sql
+CREATE TABLE tool (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_tool_name UNIQUE (name)
+);
+
+CREATE TABLE recipe_tool (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    recipe_id INT NOT NULL,
+    tool_id INT NOT NULL,
+    required BOOLEAN NOT NULL DEFAULT TRUE,
+    notes VARCHAR(255) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_recipe_tool_recipe
+        FOREIGN KEY (recipe_id) REFERENCES recipe(id),
+
+    CONSTRAINT fk_recipe_tool_tool
+        FOREIGN KEY (tool_id) REFERENCES tool(id),
+
+    CONSTRAINT uq_recipe_tool
+        UNIQUE (recipe_id, tool_id)
+);
+
+CREATE INDEX idx_recipe_tool_recipe_id
+    ON recipe_tool(recipe_id);
+
+CREATE INDEX idx_recipe_tool_tool_id
+    ON recipe_tool(tool_id);
+```
+
+## 5) Optional Hardening for Recipe Deduplication
+
+If recipe imports come from external sources, consider adding:
+
+```sql
+ALTER TABLE recipe
+    ADD COLUMN source VARCHAR(100) NULL,
+    ADD COLUMN source_external_id VARCHAR(255) NULL,
+    ADD COLUMN slug VARCHAR(255) NULL;
+
+ALTER TABLE recipe
+    ADD CONSTRAINT uq_recipe_source_external_id
+        UNIQUE (source, source_external_id);
+
+ALTER TABLE recipe
+    ADD CONSTRAINT uq_recipe_slug
+        UNIQUE (slug);
+```
+
+## Migration Strategy (When/If Implemented)
+
+- Do not edit `V1_0__create_tables.sql` after being applied.
+- Add forward-only migrations, for example:
+  - `V1_1__add_course_and_recipe_course.sql`
+  - `V1_2__add_tag_and_recipe_tag.sql`
+  - `V1_3__add_supplier_and_ingredient_supplier.sql`
+  - `V1_4__add_tool_and_recipe_tool.sql`
+  - `V1_5__add_recipe_dedup_keys.sql` (optional)
+- Backfill data incrementally and keep import scripts idempotent where possible.

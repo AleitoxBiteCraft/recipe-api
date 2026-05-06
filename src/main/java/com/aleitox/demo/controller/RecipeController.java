@@ -43,60 +43,60 @@ public class RecipeController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<RecipeResponseDto> getById(@PathVariable Integer id) {
+    public ResponseEntity<RecipeResponseDto> getById(@PathVariable("id") Integer id) {
         return ResponseEntity.ok(recipeService.getById(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<RecipeResponseDto> update(@PathVariable Integer id,
+    public ResponseEntity<RecipeResponseDto> update(@PathVariable("id") Integer id,
                                                     @Valid @RequestBody RecipeRequestDto request) {
         return ResponseEntity.ok(recipeService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") Integer id) {
         recipeService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{recipeId}/components")
-    public ResponseEntity<RecipeComponentResponseDto> addComponent(@PathVariable Integer recipeId,
+    public ResponseEntity<RecipeComponentResponseDto> addComponent(@PathVariable("recipeId") Integer recipeId,
                                                                    @Valid @RequestBody RecipeComponentRequestDto request) {
         RecipeComponentResponseDto created = recipeService.addComponent(recipeId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{recipeId}/components/{recipeComponentId}")
-    public ResponseEntity<RecipeComponentResponseDto> updateComponent(@PathVariable Integer recipeId,
-                                                                      @PathVariable Integer recipeComponentId,
+    public ResponseEntity<RecipeComponentResponseDto> updateComponent(@PathVariable("recipeId") Integer recipeId,
+                                                                      @PathVariable("recipeComponentId") Integer recipeComponentId,
                                                                       @Valid @RequestBody RecipeComponentRequestDto request) {
         return ResponseEntity.ok(recipeService.updateComponent(recipeId, recipeComponentId, request));
     }
 
     @DeleteMapping("/{recipeId}/components/{recipeComponentId}")
-    public ResponseEntity<Void> deleteComponent(@PathVariable Integer recipeId,
-                                                @PathVariable Integer recipeComponentId) {
+    public ResponseEntity<Void> deleteComponent(@PathVariable("recipeId") Integer recipeId,
+                                                @PathVariable("recipeComponentId") Integer recipeComponentId) {
         recipeService.deleteComponent(recipeId, recipeComponentId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{recipeId}/steps")
-    public ResponseEntity<RecipeStepResponseDto> addStep(@PathVariable Integer recipeId,
+    public ResponseEntity<RecipeStepResponseDto> addStep(@PathVariable("recipeId") Integer recipeId,
                                                          @Valid @RequestBody RecipeStepRequestDto request) {
         RecipeStepResponseDto created = recipeService.addStep(recipeId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{recipeId}/steps/{recipeStepId}")
-    public ResponseEntity<RecipeStepResponseDto> updateStep(@PathVariable Integer recipeId,
-                                                            @PathVariable Integer recipeStepId,
+    public ResponseEntity<RecipeStepResponseDto> updateStep(@PathVariable("recipeId") Integer recipeId,
+                                                            @PathVariable("recipeStepId") Integer recipeStepId,
                                                             @Valid @RequestBody RecipeStepRequestDto request) {
         return ResponseEntity.ok(recipeService.updateStep(recipeId, recipeStepId, request));
     }
 
     @DeleteMapping("/{recipeId}/steps/{recipeStepId}")
-    public ResponseEntity<Void> deleteStep(@PathVariable Integer recipeId,
-                                           @PathVariable Integer recipeStepId) {
+    public ResponseEntity<Void> deleteStep(@PathVariable("recipeId") Integer recipeId,
+                                           @PathVariable("recipeStepId") Integer recipeStepId) {
         recipeService.deleteStep(recipeId, recipeStepId);
         return ResponseEntity.noContent().build();
     }

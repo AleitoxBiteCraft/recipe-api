@@ -40,18 +40,18 @@ public class DishController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DishDetailResponseDto> getById(@PathVariable Integer id) {
+    public ResponseEntity<DishDetailResponseDto> getById(@PathVariable("id") Integer id) {
         return ResponseEntity.ok(dishService.getById(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DishResponseDto> update(@PathVariable Integer id,
+    public ResponseEntity<DishResponseDto> update(@PathVariable("id") Integer id,
                                                   @Valid @RequestBody DishRequestDto request) {
         return ResponseEntity.ok(dishService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") Integer id) {
         dishService.delete(id);
         return ResponseEntity.noContent().build();
     }
