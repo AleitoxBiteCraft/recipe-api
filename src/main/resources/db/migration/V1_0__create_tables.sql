@@ -31,6 +31,32 @@ CREATE TABLE recipe (
     CONSTRAINT uq_recipe_name UNIQUE (name)
 );
 
+CREATE TABLE tag (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_tag_name UNIQUE (name)
+);
+
+CREATE TABLE recipe_tag (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    recipe_id INT NOT NULL,
+    tag_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_recipe_tag_recipe
+        FOREIGN KEY (recipe_id) REFERENCES recipe(id),
+
+    CONSTRAINT fk_recipe_tag_tag
+        FOREIGN KEY (tag_id) REFERENCES tag(id),
+
+    CONSTRAINT uq_recipe_tag
+        UNIQUE (recipe_id, tag_id)
+);
+
 CREATE TABLE recipe_component (
     id INT AUTO_INCREMENT PRIMARY KEY,
     recipe_id INT NOT NULL,
@@ -165,6 +191,12 @@ CREATE INDEX idx_recipe_component_child_recipe_id
 
 CREATE INDEX idx_recipe_step_recipe_id
     ON recipe_step(recipe_id);
+
+CREATE INDEX idx_recipe_tag_recipe_id
+    ON recipe_tag(recipe_id);
+
+CREATE INDEX idx_recipe_tag_tag_id
+    ON recipe_tag(tag_id);
 
 CREATE INDEX idx_dish_recipe_dish_id
     ON dish_recipe(dish_id);

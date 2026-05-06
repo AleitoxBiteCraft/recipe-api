@@ -6,7 +6,7 @@ It is intentionally **not implemented** yet. Use it as a reference for future Fl
 ## Goals
 
 - Keep current model stable while loading recipes.
-- Avoid duplicate records (recipes, tags, relations).
+- Avoid duplicate records (recipes and relations).
 - Add metadata for discoverability and procurement.
 
 ## 1) Cooking Courses (Recipe Origin)
@@ -50,43 +50,7 @@ CREATE INDEX idx_recipe_course_course_id
     ON recipe_course(course_id);
 ```
 
-## 2) Tags for Search and Classification
-
-```sql
-CREATE TABLE tag (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-    CONSTRAINT uq_tag_name UNIQUE (name)
-);
-
-CREATE TABLE recipe_tag (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    recipe_id INT NOT NULL,
-    tag_id INT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_recipe_tag_recipe
-        FOREIGN KEY (recipe_id) REFERENCES recipe(id),
-
-    CONSTRAINT fk_recipe_tag_tag
-        FOREIGN KEY (tag_id) REFERENCES tag(id),
-
-    CONSTRAINT uq_recipe_tag
-        UNIQUE (recipe_id, tag_id)
-);
-
-CREATE INDEX idx_recipe_tag_recipe_id
-    ON recipe_tag(recipe_id);
-
-CREATE INDEX idx_recipe_tag_tag_id
-    ON recipe_tag(tag_id);
-```
-
-## 3) Ingredient Sources (Where to Buy)
+## 2) Ingredient Sources (Where to Buy)
 
 ```sql
 CREATE TABLE supplier (
@@ -129,7 +93,7 @@ CREATE INDEX idx_ingredient_supplier_supplier_id
     ON ingredient_supplier(supplier_id);
 ```
 
-## 4) Required Tools by Recipe
+## 3) Required Tools by Recipe
 
 ```sql
 CREATE TABLE tool (
@@ -167,7 +131,7 @@ CREATE INDEX idx_recipe_tool_tool_id
     ON recipe_tool(tool_id);
 ```
 
-## 5) Optional Hardening for Recipe Deduplication
+## 4) Optional Hardening for Recipe Deduplication
 
 If recipe imports come from external sources, consider adding:
 
@@ -191,8 +155,7 @@ ALTER TABLE recipe
 - Do not edit `V1_0__create_tables.sql` after being applied.
 - Add forward-only migrations, for example:
   - `V1_1__add_course_and_recipe_course.sql`
-  - `V1_2__add_tag_and_recipe_tag.sql`
-  - `V1_3__add_supplier_and_ingredient_supplier.sql`
-  - `V1_4__add_tool_and_recipe_tool.sql`
-  - `V1_5__add_recipe_dedup_keys.sql` (optional)
+  - `V1_2__add_supplier_and_ingredient_supplier.sql`
+  - `V1_3__add_tool_and_recipe_tool.sql`
+  - `V1_4__add_recipe_dedup_keys.sql` (optional)
 - Backfill data incrementally and keep import scripts idempotent where possible.

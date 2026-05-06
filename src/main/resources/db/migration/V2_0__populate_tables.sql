@@ -40,6 +40,19 @@ INSERT INTO recipe (
     (2, 'Ensalada vietnamita con aderezo hit', 'Receta principal para 3 personas con pollo y vegetales.'),
     (3, 'Pollo hervido desmenuzado', 'Pechuga hervida y desmenuzada para usar en ensaladas y otras preparaciones.');
 
+-- 2.2.1 Add tags and link to recipes.
+INSERT INTO tag (
+    id, name
+) VALUES (
+    1, 'Vietnamese'
+);
+
+INSERT INTO recipe_tag (
+    id, recipe_id, tag_id
+) VALUES (
+    1, 2, 1
+);
+
 INSERT INTO dish_recipe (
     id, dish_id, recipe_id
 ) VALUES (
