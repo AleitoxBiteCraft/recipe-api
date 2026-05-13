@@ -6,4 +6,4 @@ Cursor loads project rules from **`.cursor/rules/`** (`.md` / `.mdc` files).
 
 **Index and guide for what goes in each file:** open **`rules/index.mdc`**.
 
-General demo rules: **`rules/project.mdc`**.
+General recipe-api rules: **`rules/project.mdc`**.

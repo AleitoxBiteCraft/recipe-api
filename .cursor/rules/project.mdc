@@ -1,9 +1,9 @@
 ---
-description: Stack, build, and quick repo context for demo (Spring/Java)
+description: Stack, build, and quick repo context for recipe-api (Spring/Java)
 alwaysApply: true
 ---
 
-# Project `demo`
+# Project `recipe-api`
 
 ## Stack
 
@@ -12,20 +12,20 @@ alwaysApply: true
 - **Framework:** Spring Boot **3.4.2**.
 - **API:** REST with `spring-boot-starter-web`; Bean Validation (`spring-boot-starter-validation`).
 - **Persistence:** Spring Data **JPA** + Hibernate (`spring.jpa.hibernate.ddl-auto` set to `update` in `application.properties` for development).
-- **Runtime database:** **MySQL 8** (`mysql-connector-java`); default URL `jdbc:mysql://localhost:3306/demo`. Credentials via **`DB_USER`** and **`DB_PASSWORD`**.
+- **Runtime database:** **MySQL 8** (`mysql-connector-java`); default URL `jdbc:mysql://localhost:3306/recipe_api`. Credentials via **`DB_USER`** and **`DB_PASSWORD`**.
 - **Migrations:** **Flyway** (`flyway-core`, `flyway-mysql`); scripts under `src/main/resources/db/migration/` (`V*__` prefix).
 - **Observability:** Actuator (`spring-boot-starter-actuator`).
 - **Boilerplate:** Lombok (compileOnly + annotation processor).
 - **Tests:** Spring Boot Test, JUnit Platform, **H2** at test time; Flyway is typically disabled in tests (`spring.flyway.enabled=false` in `application-test.properties`).
 
-Base package: **`com.aleitox.demo`**.
+Base package: **`com.aleitox.recipe`**.
 
 ## Build / quick verification
 
-From the repo root on any machine with bash:
+From the repo root:
 
 ```bash
-bash -lc "./gradlew build"
+./gradlew build
 ```
 
 Runs compile + configured tests.
