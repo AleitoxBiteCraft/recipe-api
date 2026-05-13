@@ -244,3 +244,82 @@ INSERT INTO recipe_step (
     (21, 5, 6, 'En el mismo wok saltear cebolla, jengibre y ajo por 30 segundos. Agregar morron y cocinar 1 minuto.'),
     (22, 5, 7, 'Agregar la mezcla de salsas, incorporar anana y cebolla de verdeo, cocinar 1 minuto.'),
     (23, 5, 8, 'Agregar el arroz cocido, mezclar bien y rectificar condimentos antes de servir.');
+
+-- 2.13 Populate 'ingredient' with Vietnamese meatballs with vermicelli ingredients.
+-- Reused existing ingredients: Fish sauce (13), Azucar (15), Cebolla de verdeo (22),
+-- Ajo (16), Jengibre (21), Aceite de girasol (14), Vinagre de arroz (12), Lima (11),
+-- Jalapeno (7), Zanahoria (6), Pepino (5), Cilantro (9), Menta (8).
+INSERT INTO ingredient (
+    id, name, calories_per_100g, proteins_per_100g, carbohydrates_per_100g, fats_per_100g, nutrition_source
+) VALUES
+    (34, 'Carne picada de cerdo', 263.00, 16.90, 0.00, 21.00, 'USDA FoodData Central'),
+    (35, 'Fideos de arroz vermicelli', 364.00, 5.90, 80.10, 0.60, 'USDA FoodData Central'),
+    (36, 'Brotes de soja', 30.00, 3.00, 6.00, 0.20, 'USDA FoodData Central'),
+    (37, 'Lechuga', 15.00, 1.40, 2.90, 0.20, 'USDA FoodData Central');
+
+-- 2.14 Create dish and recipes for Vietnamese meatballs with vermicelli.
+INSERT INTO dish (
+    id, name, description
+) VALUES (
+    4,
+    'Albondigas vietnamitas con vermicelli noodles',
+    'Plato vietnamita para 2 a 3 personas con albondigas de cerdo, fideos de arroz y salsa Nuoc Cham.'
+);
+
+INSERT INTO recipe (
+    id, name, description
+) VALUES
+    (7, 'Albondigas vietnamitas', 'Mini albondigas de cerdo sazonadas con fish sauce, ajo y jengibre.'),
+    (8, 'Vermicelli noodles', 'Acompanamiento de fideos de arroz con vegetales frescos y hierbas.'),
+    (9, 'Salsa Nuoc Cham', 'Salsa vietnamita de fish sauce, lima, vinagre, azucar, ajo y chile.');
+
+-- 2.14.1 Link Vietnamese tag to recipes and recipes to dish.
+INSERT INTO recipe_tag (
+    id, recipe_id, tag_id
+) VALUES
+    (4, 7, 1),
+    (5, 8, 1),
+    (6, 9, 1);
+
+INSERT INTO dish_recipe (
+    id, dish_id, recipe_id
+) VALUES
+    (5, 4, 7),
+    (6, 4, 8),
+    (7, 4, 9);
+
+-- 2.15 Link ingredients and nested recipes in 'recipe_component'.
+INSERT INTO recipe_component (
+    id, recipe_id, component_type, ingredient_id, child_recipe_id, quantity, unit
+) VALUES
+    (44, 7, 'INGREDIENT', 34, null, 300.00, 'g'),
+    (45, 7, 'INGREDIENT', 13, null, 15.00, 'ml'),
+    (46, 7, 'INGREDIENT', 15, null, 8.00, 'g'),
+    (47, 7, 'INGREDIENT', 22, null, 25.00, 'g'),
+    (48, 7, 'INGREDIENT', 16, null, 3.00, 'g'),
+    (49, 7, 'INGREDIENT', 21, null, 6.00, 'g'),
+    (50, 7, 'INGREDIENT', 14, null, 10.00, 'ml'),
+    (51, 9, 'INGREDIENT', 15, null, 36.00, 'g'),
+    (52, 9, 'INGREDIENT', 13, null, 45.00, 'ml'),
+    (53, 9, 'INGREDIENT', 12, null, 30.00, 'ml'),
+    (54, 9, 'INGREDIENT', 11, null, 30.00, 'ml'),
+    (55, 9, 'INGREDIENT', 7, null, 10.00, 'g'),
+    (56, 9, 'INGREDIENT', 16, null, 6.00, 'g'),
+    (57, 8, 'INGREDIENT', 35, null, 100.00, 'g'),
+    (58, 8, 'INGREDIENT', 36, null, 100.00, 'g'),
+    (59, 8, 'INGREDIENT', 37, null, 300.00, 'g'),
+    (60, 8, 'INGREDIENT', 9, null, 30.00, 'g'),
+    (61, 8, 'INGREDIENT', 8, null, 30.00, 'g'),
+    (62, 8, 'INGREDIENT', 6, null, 60.00, 'g'),
+    (63, 8, 'INGREDIENT', 5, null, 125.00, 'g');
+
+-- 2.16 Add step-by-step instructions in 'recipe_step'.
+INSERT INTO recipe_step (
+    id, recipe_id, step_order, description
+) VALUES
+    (24, 7, 1, 'Mezclar carne picada de cerdo, fish sauce, azucar, cebolla de verdeo, ajo, jengibre, sal y pimienta en un bowl.'),
+    (25, 7, 2, 'Probar condimento cocinando una mini bolita y ajustar si hace falta. Formar 12 mini patties o albondigas.'),
+    (26, 7, 3, 'Calentar sarten a fuego medio-alto con un chorrito de aceite y cocinar 3 minutos de cada lado hasta dorar y cocinar por completo.'),
+    (27, 9, 1, 'Mezclar azucar, fish sauce, vinagre de arroz, jugo de lima, agua, jalapeno picado y ajo picado hasta disolver el azucar.'),
+    (28, 8, 1, 'Cocinar los fideos vermicelli segun paquete, colar y enfriar.'),
+    (29, 8, 2, 'Preparar acompanamiento con brotes de soja, lechuga, cilantro o menta, zanahoria y pepino en juliana.');
