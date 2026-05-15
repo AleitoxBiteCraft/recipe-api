@@ -24,6 +24,7 @@ erDiagram
         int id PK
         varchar name UK "NOT NULL"
         text description
+        int serving "NULL, CHECK > 0 when set"
         datetime created_at
         datetime updated_at
     }
@@ -120,13 +121,14 @@ erDiagram
 
 | Domain | Tables | Role |
 |--------|--------|------|
-| Catalog | `ingredient`, `recipe`, `tag`, `dish` | Core entities |
+| Catalog | `ingredient`, `recipe`, `tag`, `dish` | Core entities; `recipe.serving` optional yield in servings |
 | Recipe detail | `recipe_tag`, `recipe_component`, `recipe_step` | Tags, composition (ingredient or sub-recipe), steps |
 | Dish | `dish_recipe` | Many-to-many: dish ↔ recipes |
 | Meal log | `meal_entry`, `meal_entry_recipe` | Logged meal; optional dish; recipes with quantity |
 
 ## Business rules (constraints)
 
+- **`recipe`**: `serving` is nullable (e.g. sub-recipes like sauces). When set, must be `> 0` (`chk_recipe_serving`).
 - **`recipe_component`**: `component_type` is `INGREDIENT` or `RECIPE`. Exactly one of `ingredient_id` or `child_recipe_id` must be set, matching the type. A recipe cannot reference itself as `child_recipe_id`.
 - **Uniqueness**: `(recipe_id, tag_id)`, `(dish_id, recipe_id)`, `(recipe_id, step_order)`; component rows are unique per recipe and reference (ingredient or child recipe).
 - **`meal_entry`**: `dish_id` is optional; linked recipes live in `meal_entry_recipe`.

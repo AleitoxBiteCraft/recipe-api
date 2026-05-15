@@ -3,6 +3,7 @@ package com.aleitox.recipe.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
@@ -14,6 +15,9 @@ public record RecipeRequestDto(
 
         @Size(max = 5000)
         String description,
+
+        @Positive
+        Integer serving,
 
         @NotEmpty
         List<@Valid RecipeComponentRequestDto> components,

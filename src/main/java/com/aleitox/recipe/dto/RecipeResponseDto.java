@@ -7,6 +7,7 @@ public record RecipeResponseDto(
         Integer id,
         String name,
         String description,
+        Integer serving,
         List<RecipeComponentResponseDto> components,
         List<RecipeStepResponseDto> steps,
         LocalDateTime createdAt,

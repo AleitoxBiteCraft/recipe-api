@@ -43,21 +43,25 @@ public class DishMapper {
         );
     }
 
-    public DishResponseDto toResponseDto(Dish domain) {
+    public DishResponseDto toResponseDto(Dish domain, Integer serving) {
         return new DishResponseDto(
                 domain.id(),
                 domain.name(),
                 domain.description(),
+                serving,
                 domain.createdAt(),
                 domain.updatedAt()
         );
     }
 
-    public DishDetailResponseDto toDetailResponseDto(Dish domain, List<DishDetailRecipeResponseDto> recipes) {
+    public DishDetailResponseDto toDetailResponseDto(Dish domain,
+                                                       Integer serving,
+                                                       List<DishDetailRecipeResponseDto> recipes) {
         return new DishDetailResponseDto(
                 domain.id(),
                 domain.name(),
                 domain.description(),
+                serving,
                 recipes,
                 domain.createdAt(),
                 domain.updatedAt()

@@ -25,10 +25,12 @@ CREATE TABLE recipe (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
+    serving INT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT uq_recipe_name UNIQUE (name)
+    CONSTRAINT uq_recipe_name UNIQUE (name),
+    CONSTRAINT chk_recipe_serving CHECK (serving IS NULL OR serving > 0)
 );
 
 CREATE TABLE tag (

@@ -7,6 +7,7 @@ public record DishDetailResponseDto(
         Integer id,
         String name,
         String description,
+        Integer serving,
         List<DishDetailRecipeResponseDto> recipes,
         LocalDateTime createdAt,
         LocalDateTime updatedAt

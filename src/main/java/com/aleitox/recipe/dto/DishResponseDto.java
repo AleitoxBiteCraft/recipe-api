@@ -6,6 +6,7 @@ public record DishResponseDto(
         Integer id,
         String name,
         String description,
+        Integer serving,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
