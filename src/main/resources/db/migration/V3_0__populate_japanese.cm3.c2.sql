@@ -43,21 +43,21 @@ INSERT INTO tag (
 );
 
 INSERT INTO recipe (
-    id, name, description
+    id, name, description, serving
 ) VALUES
-    (10, 'Caldo pollo base (ramen)', 'Primera coccion de huesos con aromaticos; el liquido colado sirve como base del caldo de ramen.'),
-    (11, 'Caldo ramen', 'Liquido infusionado con shiitake y cebolla, luego miso y salsas. Usa una tanda completa de caldo pollo base.'),
-    (12, 'Sofrito opcional de cerdo (ramen)', 'Carne picada dorada con ajo, jengibre y vinagre de arroz para sumar al bowl; paso opcional del ramen.'),
-    (13, 'Chashu de panceta para ramen', 'Panceta cocida en salsa dulce salada tipo chashu para servir sobre ramen.'),
-    (14, 'Huevos soft-boil para ramen', 'Huevos con clara firme y yema cremosa para ramen.'),
-    (15, 'Huevos marinados para ramen (ajitsuke tamago)', 'Huevos pelados marinados en mezcla de soja y mirin.'),
-    (16, 'Ramen de cerdo', 'Bowl para 2 personas con caldo, fideos, chashu, huevo marinado y toppings.'),
-    (17, 'Dumpling de cerdo y langostinos', 'Relleno de cerdo y langostinos en tapas wonton; aproximadamente 40 unidades.'),
-    (18, 'Crispy rice', 'Arroz para sushi compactado, refrigerado y frito en cuadrados para servir con tartar o poke.'),
-    (19, 'Tartar de trucha o salmon', 'Mezcla de pescado en cubos con sriracha, mayonesa, aceite de sesamo, verdeo y semillas.'),
-    (20, 'Poke de salmon', 'Variante de pescado en cubos con soja, mirin, vinagre de arroz, sriracha, jengibre y aceite de sesamo.'),
-    (21, 'Topping de atun en lata', 'Atun desmenuzado con sriracha, mayonesa, jugo de limon y aromatizantes.'),
-    (22, 'Tartar de trucha (variante con lima)', 'Variante con jengibre, salsa de soja, aceite de mani y semillas; ralladura de lima en los pasos. Inspirada en notas de clase.');
+    (10, 'Caldo pollo base (ramen)', 'Primera coccion de huesos con aromaticos; el liquido colado sirve como base del caldo de ramen.', null),
+    (11, 'Caldo ramen', 'Liquido infusionado con shiitake y cebolla, luego miso y salsas. Usa una tanda completa de caldo pollo base.', null),
+    (12, 'Sofrito opcional de cerdo (ramen)', 'Carne picada dorada con ajo, jengibre y vinagre de arroz para sumar al bowl; paso opcional del ramen.', null),
+    (13, 'Chashu de panceta para ramen', 'Panceta cocida en salsa dulce salada tipo chashu para servir sobre ramen.', null),
+    (14, 'Huevos soft-boil para ramen', 'Huevos con clara firme y yema cremosa para ramen.', null),
+    (15, 'Huevos marinados para ramen (ajitsuke tamago)', 'Huevos pelados marinados en mezcla de soja y mirin.', null),
+    (16, 'Ramen de cerdo', 'Bowl para 2 personas con caldo, fideos, chashu, huevo marinado y toppings.', 2),
+    (17, 'Dumpling de cerdo y langostinos', 'Relleno de cerdo y langostinos en tapas wonton; aproximadamente 40 unidades.', 4),
+    (18, 'Crispy rice', 'Arroz para sushi compactado, refrigerado y frito en cuadrados para servir con tartar o poke.', null),
+    (19, 'Tartar de trucha o salmon', 'Mezcla de pescado en cubos con sriracha, mayonesa, aceite de sesamo, verdeo y semillas.', 3),
+    (20, 'Poke de salmon', 'Variante de pescado en cubos con soja, mirin, vinagre de arroz, sriracha, jengibre y aceite de sesamo.', 2),
+    (21, 'Topping de atun en lata', 'Atun desmenuzado con sriracha, mayonesa, jugo de limon y aromatizantes.', 2),
+    (22, 'Tartar de trucha (variante con lima)', 'Variante con jengibre, salsa de soja, aceite de mani y semillas; ralladura de lima en los pasos. Inspirada en notas de clase.', 1);
 
 INSERT INTO recipe_component (
     id, recipe_id, component_type, ingredient_id, child_recipe_id, quantity, unit

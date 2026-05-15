@@ -34,11 +34,11 @@ INSERT INTO dish (
 );
 
 INSERT INTO recipe (
-    id, name, description
+    id, name, description, serving
 ) VALUES
-    (1, 'Aderezo hit', 'Aderezo con lima, fish sauce y aceite para ensalada vietnamita.'),
-    (2, 'Ensalada vietnamita con aderezo hit', 'Receta principal para 3 personas con pollo y vegetales.'),
-    (3, 'Pollo hervido desmenuzado', 'Pechuga hervida y desmenuzada para usar en ensaladas y otras preparaciones.');
+    (1, 'Aderezo hit', 'Aderezo con lima, fish sauce y aceite para ensalada vietnamita.', null),
+    (2, 'Ensalada vietnamita con aderezo hit', 'Receta principal para 3 personas con pollo y vegetales.', 3),
+    (3, 'Pollo hervido desmenuzado', 'Pechuga hervida y desmenuzada para usar en ensaladas y otras preparaciones.', null);
 
 -- 2.2.1 Add tags and link to recipes.
 INSERT INTO tag (
@@ -126,11 +126,12 @@ INSERT INTO dish (
 );
 
 INSERT INTO recipe (
-    id, name, description
+    id, name, description, serving
 ) VALUES (
     4,
     'Asian Short Ribs',
-    'Costilla vacuna dorada y cocida lentamente en horno con salsa de soja, aromáticos y hoisin.'
+    'Costilla vacuna dorada y cocida lentamente en horno con salsa de soja, aromáticos y hoisin.',
+    4
 );
 
 -- 2.6.1 Link Vietnamese tag to the recipe and recipe to dish.
@@ -194,11 +195,12 @@ INSERT INTO dish (
 );
 
 INSERT INTO recipe (
-    id, name, description
+    id, name, description, serving
 ) VALUES (
     5,
     'Thai Pineapple Rice',
-    'Arroz basmati cocido y salteado con anana, vegetales, curry amarillo y langostinos.'
+    'Arroz basmati cocido y salteado con anana, vegetales, curry amarillo y langostinos.',
+    4
 );
 
 -- 2.10.1 Link Vietnamese tag to the recipe and recipe to dish.
@@ -267,11 +269,11 @@ INSERT INTO dish (
 );
 
 INSERT INTO recipe (
-    id, name, description
+    id, name, description, serving
 ) VALUES
-    (7, 'Albondigas vietnamitas', 'Mini albondigas de cerdo sazonadas con fish sauce, ajo y jengibre.'),
-    (8, 'Vermicelli noodles', 'Acompanamiento de fideos de arroz con vegetales frescos y hierbas.'),
-    (9, 'Salsa Nuoc Cham', 'Salsa vietnamita de fish sauce, lima, vinagre, azucar, ajo y chile.');
+    (7, 'Albondigas vietnamitas', 'Mini albondigas de cerdo sazonadas con fish sauce, ajo y jengibre.', 2),
+    (8, 'Vermicelli noodles', 'Acompanamiento de fideos de arroz con vegetales frescos y hierbas.', null),
+    (9, 'Salsa Nuoc Cham', 'Salsa vietnamita de fish sauce, lima, vinagre, azucar, ajo y chile.', null);
 
 -- 2.14.1 Link Vietnamese tag to recipes and recipes to dish.
 INSERT INTO recipe_tag (
