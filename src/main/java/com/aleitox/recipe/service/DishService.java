@@ -1,6 +1,7 @@
 package com.aleitox.recipe.service;
 
 import com.aleitox.recipe.domain.Dish;
+import com.aleitox.recipe.dto.DishDetailRecipeResponseDto;
 import com.aleitox.recipe.dto.DishDetailResponseDto;
 import com.aleitox.recipe.dto.DishRequestDto;
 import com.aleitox.recipe.dto.DishResponseDto;
@@ -42,7 +43,7 @@ public class DishService {
         entityToSave.setUpdatedAt(now);
 
         DishEntity saved = dishRepository.save(entityToSave);
-        return dishMapper.toResponseDto(dishMapper.toDomain(saved));
+        return dishMapper.toResponseDto(dishMapper.toDomain(saved), toServingSum(saved.getId()));
     }
 
     public DishDetailResponseDto getById(Integer id) {
@@ -52,14 +53,16 @@ public class DishService {
         var recipes = dishRecipeRepository.findRecipeIdsByDishIdOrderByLinkIdAsc(id).stream()
                 .map(recipeService::toDishDetailRecipeTree)
                 .toList();
-        return dishMapper.toDetailResponseDto(dish, recipes);
+        int servingSum = sumTopLevelRecipeServings(recipes);
+        return dishMapper.toDetailResponseDto(dish, servingSum, recipes);
     }
 
     public List<DishResponseDto> getAll() {
         return dishRepository.findAll()
                 .stream()
-                .map(dishMapper::toDomain)
-                .map(dishMapper::toResponseDto)
+                .map(entity -> dishMapper.toResponseDto(
+                        dishMapper.toDomain(entity),
+                        toServingSum(entity.getId())))
                 .toList();
     }
 
@@ -72,7 +75,7 @@ public class DishService {
         existing.setUpdatedAt(LocalDateTime.now());
 
         DishEntity updated = dishRepository.save(existing);
-        return dishMapper.toResponseDto(dishMapper.toDomain(updated));
+        return dishMapper.toResponseDto(dishMapper.toDomain(updated), toServingSum(id));
     }
 
     public void delete(Integer id) {
@@ -88,5 +91,21 @@ public class DishService {
         Objects.requireNonNull(id, "Id cannot be null");
         return dishRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Dish not found with id: " + id));
+    }
+
+    /** Top-level recipes linked to the dish; sub-recipes are not included. */
+    private static int sumTopLevelRecipeServings(List<DishDetailRecipeResponseDto> recipes) {
+        int sum = 0;
+        for (DishDetailRecipeResponseDto recipe : recipes) {
+            Integer s = recipe.serving();
+            if (s != null) {
+                sum += s;
+            }
+        }
+        return sum;
+    }
+
+    private Integer toServingSum(Integer dishId) {
+        return Math.toIntExact(dishRecipeRepository.sumServingsByDishId(dishId));
     }
 }
