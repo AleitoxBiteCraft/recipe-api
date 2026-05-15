@@ -109,6 +109,7 @@ public class RecipeService {
                     recipe.getId(),
                     recipe.getName(),
                     recipe.getDescription(),
+                    recipe.getServing(),
                     List.of()
             );
         }
@@ -125,6 +126,7 @@ public class RecipeService {
                 recipe.getId(),
                 recipe.getName(),
                 recipe.getDescription(),
+                recipe.getServing(),
                 List.copyOf(subRecipes)
         );
     }
@@ -138,6 +140,7 @@ public class RecipeService {
         var incoming = recipeMapper.toDomain(request, id);
         existing.setName(incoming.name());
         existing.setDescription(incoming.description());
+        existing.setServing(incoming.serving());
         existing.setUpdatedAt(LocalDateTime.now());
         RecipeEntity updatedRecipe = recipeRepository.save(existing);
 
@@ -452,6 +455,7 @@ public class RecipeService {
                 recipe.getId(),
                 recipe.getName(),
                 recipe.getDescription(),
+                recipe.getServing(),
                 components.stream()
                         .map(recipeComponentMapper::toDomain)
                         .map(recipeComponentMapper::toResponseDto)

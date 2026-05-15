@@ -6,6 +6,7 @@ public record DishDetailRecipeResponseDto(
         Integer id,
         String name,
         String description,
+        Integer serving,
         List<DishDetailRecipeResponseDto> subRecipes
 ) {
 }

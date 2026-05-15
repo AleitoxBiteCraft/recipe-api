@@ -13,6 +13,7 @@ public class RecipeMapper {
                 entity.getId(),
                 entity.getName(),
                 entity.getDescription(),
+                entity.getServing(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
@@ -23,6 +24,7 @@ public class RecipeMapper {
         entity.setId(domain.id());
         entity.setName(domain.name());
         entity.setDescription(domain.description());
+        entity.setServing(domain.serving());
         entity.setCreatedAt(domain.createdAt());
         entity.setUpdatedAt(domain.updatedAt());
         return entity;
@@ -33,6 +35,7 @@ public class RecipeMapper {
                 id,
                 request.name(),
                 request.description(),
+                request.serving(),
                 null,
                 null
         );

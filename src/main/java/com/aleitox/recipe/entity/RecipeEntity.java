@@ -31,6 +31,9 @@ public class RecipeEntity {
     @Column
     private String description;
 
+    @Column
+    private Integer serving;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
