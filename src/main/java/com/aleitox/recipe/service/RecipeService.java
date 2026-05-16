@@ -1,6 +1,7 @@
 package com.aleitox.recipe.service;
 
 import com.aleitox.recipe.domain.RecipeComponentType;
+import com.aleitox.recipe.domain.Tag;
 import com.aleitox.recipe.dto.DishDetailRecipeResponseDto;
 import com.aleitox.recipe.dto.RecipeComponentRequestDto;
 import com.aleitox.recipe.dto.RecipeComponentResponseDto;
@@ -8,6 +9,7 @@ import com.aleitox.recipe.dto.RecipeRequestDto;
 import com.aleitox.recipe.dto.RecipeResponseDto;
 import com.aleitox.recipe.dto.RecipeStepRequestDto;
 import com.aleitox.recipe.dto.RecipeStepResponseDto;
+import com.aleitox.recipe.dto.TagResponseDto;
 import com.aleitox.recipe.entity.IngredientEntity;
 import com.aleitox.recipe.entity.RecipeComponentEntity;
 import com.aleitox.recipe.entity.RecipeEntity;
@@ -15,10 +17,12 @@ import com.aleitox.recipe.entity.RecipeStepEntity;
 import com.aleitox.recipe.mapper.RecipeComponentMapper;
 import com.aleitox.recipe.mapper.RecipeMapper;
 import com.aleitox.recipe.mapper.RecipeStepMapper;
+import com.aleitox.recipe.mapper.TagMapper;
 import com.aleitox.recipe.repository.IngredientRepository;
 import com.aleitox.recipe.repository.RecipeComponentRepository;
 import com.aleitox.recipe.repository.RecipeRepository;
 import com.aleitox.recipe.repository.RecipeStepRepository;
+import com.aleitox.recipe.repository.RecipeTagRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,11 +33,16 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class RecipeService {
@@ -47,24 +56,30 @@ public class RecipeService {
     private final IngredientRepository ingredientRepository;
     private final RecipeComponentRepository recipeComponentRepository;
     private final RecipeStepRepository recipeStepRepository;
+    private final RecipeTagRepository recipeTagRepository;
     private final RecipeMapper recipeMapper;
     private final RecipeComponentMapper recipeComponentMapper;
     private final RecipeStepMapper recipeStepMapper;
+    private final TagMapper tagMapper;
 
     public RecipeService(RecipeRepository recipeRepository,
                          IngredientRepository ingredientRepository,
                          RecipeComponentRepository recipeComponentRepository,
                          RecipeStepRepository recipeStepRepository,
+                         RecipeTagRepository recipeTagRepository,
                          RecipeMapper recipeMapper,
                          RecipeComponentMapper recipeComponentMapper,
-                         RecipeStepMapper recipeStepMapper) {
+                         RecipeStepMapper recipeStepMapper,
+                         TagMapper tagMapper) {
         this.recipeRepository = recipeRepository;
         this.ingredientRepository = ingredientRepository;
         this.recipeComponentRepository = recipeComponentRepository;
         this.recipeStepRepository = recipeStepRepository;
+        this.recipeTagRepository = recipeTagRepository;
         this.recipeMapper = recipeMapper;
         this.recipeComponentMapper = recipeComponentMapper;
         this.recipeStepMapper = recipeStepMapper;
+        this.tagMapper = tagMapper;
     }
 
     @Transactional
@@ -168,6 +183,7 @@ public class RecipeService {
         }
         recipeComponentRepository.deleteByRecipeId(id);
         recipeStepRepository.deleteByRecipeId(id);
+        recipeTagRepository.deleteByRecipe_Id(id);
         recipeRepository.deleteById(id);
     }
 
@@ -459,6 +475,7 @@ public class RecipeService {
                                          List<RecipeComponentEntity> components,
                                          List<RecipeStepEntity> steps) {
         BatchTotals batchTotals = computeBatchTotals(recipe.getId(), new HashSet<>());
+        Set<TagResponseDto> tags = computeEffectiveTags(recipe.getId(), new HashSet<>());
         return new RecipeResponseDto(
                 recipe.getId(),
                 recipe.getName(),
@@ -476,9 +493,46 @@ public class RecipeService {
                         .map(recipeStepMapper::toDomain)
                         .map(recipeStepMapper::toResponseDto)
                         .toList(),
+                tags,
                 recipe.getCreatedAt(),
                 recipe.getUpdatedAt()
         );
+    }
+
+    /**
+     * Tags linked to the recipe plus tags from nested {@link RecipeComponentType#RECIPE} components
+     * (transitive). Duplicates are merged by tag id. Iteration order is by name (case-insensitive).
+     */
+    private Set<TagResponseDto> computeEffectiveTags(Integer recipeId, Set<Integer> visiting) {
+        if (!visiting.add(recipeId)) {
+            return Set.of();
+        }
+        try {
+            Map<Integer, Tag> byId = new HashMap<>();
+            for (var link : recipeTagRepository.findWithTagByRecipeId(recipeId)) {
+                Tag tag = tagMapper.toDomain(link.getTag());
+                byId.putIfAbsent(tag.id(), tag);
+            }
+            for (RecipeComponentEntity component : recipeComponentRepository.findByRecipeId(recipeId)) {
+                if (component.getComponentType() != RecipeComponentType.RECIPE || component.getChildRecipe() == null) {
+                    continue;
+                }
+                for (TagResponseDto inherited : computeEffectiveTags(component.getChildRecipe().getId(), visiting)) {
+                    Tag tag = new Tag(
+                            inherited.id(),
+                            inherited.name(),
+                            inherited.createdAt(),
+                            inherited.updatedAt());
+                    byId.putIfAbsent(tag.id(), tag);
+                }
+            }
+            return byId.values().stream()
+                    .sorted(Comparator.comparing(Tag::name, String.CASE_INSENSITIVE_ORDER))
+                    .map(tagMapper::toResponseDto)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        } finally {
+            visiting.remove(recipeId);
+        }
     }
 
     /**
