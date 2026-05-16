@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -35,6 +37,11 @@ import java.util.Set;
 
 @Service
 public class RecipeService {
+
+    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
+    private static final int NUTRITION_SCALE = 4;
+    private static final int RESPONSE_NUTRITION_DECIMALS = 2;
+    private static final RoundingMode NUTRITION_ROUNDING = RoundingMode.HALF_UP;
 
     private final RecipeRepository recipeRepository;
     private final IngredientRepository ingredientRepository;
@@ -451,11 +458,16 @@ public class RecipeService {
     private RecipeResponseDto toResponse(RecipeEntity recipe,
                                          List<RecipeComponentEntity> components,
                                          List<RecipeStepEntity> steps) {
+        BatchTotals batchTotals = computeBatchTotals(recipe.getId(), new HashSet<>());
         return new RecipeResponseDto(
                 recipe.getId(),
                 recipe.getName(),
                 recipe.getDescription(),
                 recipe.getServing(),
+                roundForResponse(batchTotals.calories()),
+                roundForResponse(batchTotals.proteins()),
+                roundForResponse(batchTotals.carbohydrates()),
+                roundForResponse(batchTotals.fats()),
                 components.stream()
                         .map(recipeComponentMapper::toDomain)
                         .map(recipeComponentMapper::toResponseDto)
@@ -467,5 +479,135 @@ public class RecipeService {
                 recipe.getCreatedAt(),
                 recipe.getUpdatedAt()
         );
+    }
+
+    /**
+     * Totals for one full recipe "batch" (all components scaled by quantity and unit).
+     * Mass in grams is the summed mass of components (g, ml treated as g; nested {@code batch} uses child batch mass).
+     */
+    private BatchTotals computeBatchTotals(Integer recipeId, Set<Integer> visiting) {
+        if (!visiting.add(recipeId)) {
+            return BatchTotals.zero();
+        }
+        try {
+            BatchTotals acc = BatchTotals.zero();
+            for (RecipeComponentEntity component : recipeComponentRepository.findByRecipeId(recipeId)) {
+                acc = acc.add(componentTotals(component, visiting));
+            }
+            return acc;
+        } finally {
+            visiting.remove(recipeId);
+        }
+    }
+
+    private BatchTotals componentTotals(RecipeComponentEntity component, Set<Integer> visiting) {
+        if (component.getComponentType() == RecipeComponentType.INGREDIENT) {
+            if (component.getIngredient() == null) {
+                return BatchTotals.zero();
+            }
+            BigDecimal grams = ingredientGrams(component.getQuantity(), component.getUnit());
+            IngredientEntity ing = component.getIngredient();
+            return new BatchTotals(
+                    scalePer100g(ing.getCaloriesPer100g(), grams),
+                    scalePer100g(ing.getProteinsPer100g(), grams),
+                    scalePer100g(ing.getCarbohydratesPer100g(), grams),
+                    scalePer100g(ing.getFatsPer100g(), grams),
+                    grams
+            );
+        }
+        if (component.getComponentType() == RecipeComponentType.RECIPE && component.getChildRecipe() != null) {
+            Integer childId = component.getChildRecipe().getId();
+            BatchTotals childBatch = computeBatchTotals(childId, visiting);
+            String unit = component.getUnit();
+            BigDecimal qty = component.getQuantity();
+            if (unit == null) {
+                return BatchTotals.zero();
+            }
+            if ("batch".equalsIgnoreCase(unit.strip())) {
+                return childBatch.scale(qty);
+            }
+            BigDecimal grams = ingredientGrams(qty, unit);
+            return childBatch.scaleToMass(grams);
+        }
+        return BatchTotals.zero();
+    }
+
+    private static BigDecimal ingredientGrams(BigDecimal quantity, String unit) {
+        if (quantity == null || unit == null) {
+            return BigDecimal.ZERO;
+        }
+        String u = unit.strip();
+        if ("g".equalsIgnoreCase(u) || "ml".equalsIgnoreCase(u)) {
+            return quantity;
+        }
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Unsupported recipe component unit for nutrition: \"" + unit + "\" (expected g, ml, or batch for nested recipes)");
+    }
+
+    private static BigDecimal scalePer100g(BigDecimal per100g, BigDecimal grams) {
+        if (per100g == null || grams.signum() == 0) {
+            return BigDecimal.ZERO;
+        }
+        return per100g.multiply(grams).divide(HUNDRED, NUTRITION_SCALE, NUTRITION_ROUNDING);
+    }
+
+    private static BigDecimal roundForResponse(BigDecimal value) {
+        return value.setScale(RESPONSE_NUTRITION_DECIMALS, NUTRITION_ROUNDING);
+    }
+
+    private record BatchTotals(
+            BigDecimal calories,
+            BigDecimal proteins,
+            BigDecimal carbohydrates,
+            BigDecimal fats,
+            BigDecimal massGrams
+    ) {
+        static BatchTotals zero() {
+            return new BatchTotals(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+        }
+
+        BatchTotals add(BatchTotals o) {
+            return new BatchTotals(
+                    calories.add(o.calories),
+                    proteins.add(o.proteins),
+                    carbohydrates.add(o.carbohydrates),
+                    fats.add(o.fats),
+                    massGrams.add(o.massGrams)
+            );
+        }
+
+        BatchTotals scale(BigDecimal factor) {
+            if (factor == null || factor.signum() == 0) {
+                return zero();
+            }
+            return new BatchTotals(
+                    calories.multiply(factor),
+                    proteins.multiply(factor),
+                    carbohydrates.multiply(factor),
+                    fats.multiply(factor),
+                    massGrams.multiply(factor)
+            );
+        }
+
+        /**
+         * Use a portion of {@code grams} from a batch with totals {@code this} and mass {@link #massGrams()}.
+         */
+        BatchTotals scaleToMass(BigDecimal grams) {
+            if (grams == null || grams.signum() == 0) {
+                return zero();
+            }
+            if (massGrams.signum() == 0) {
+                return new BatchTotals(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, grams);
+            }
+            BigDecimal ratio = grams.divide(massGrams, NUTRITION_SCALE + 4, NUTRITION_ROUNDING);
+            return new BatchTotals(
+                    calories.multiply(ratio),
+                    proteins.multiply(ratio),
+                    carbohydrates.multiply(ratio),
+                    fats.multiply(ratio),
+                    grams
+            );
+        }
     }
 }
