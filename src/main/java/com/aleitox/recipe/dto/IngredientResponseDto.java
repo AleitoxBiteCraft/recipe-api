@@ -2,6 +2,7 @@ package com.aleitox.recipe.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record IngredientResponseDto(
         Integer id,
@@ -11,6 +12,7 @@ public record IngredientResponseDto(
         BigDecimal carbohydratesPer100g,
         BigDecimal fatsPer100g,
         String nutritionSource,
+        List<IngredientUnitResponseDto> units,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

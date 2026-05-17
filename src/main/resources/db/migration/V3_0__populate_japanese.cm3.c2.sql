@@ -36,6 +36,10 @@ INSERT INTO ingredient (
     (61, 'Arroz Koshihikari', 356.00, 6.50, 79.00, 0.50, 'USDA FoodData Central'),
     (62, 'Salmon o trucha fresco sin piel', 208.00, 20.40, 0.00, 13.40, 'USDA FoodData Central');
 
+-- Tapas wonton (60): recipe 17 counts wrappers as unit; ~8 g per commercial square wrapper.
+INSERT INTO ingredient_unit (ingredient_id, unit, grams_per_unit) VALUES
+    (60, 'unit', 8.0000);
+
 INSERT INTO tag (
     id, name
 ) VALUES (

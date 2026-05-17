@@ -19,6 +19,7 @@ import com.aleitox.recipe.mapper.RecipeMapper;
 import com.aleitox.recipe.mapper.RecipeStepMapper;
 import com.aleitox.recipe.mapper.TagMapper;
 import com.aleitox.recipe.repository.IngredientRepository;
+import com.aleitox.recipe.repository.IngredientUnitRepository;
 import com.aleitox.recipe.repository.RecipeComponentRepository;
 import com.aleitox.recipe.repository.RecipeRepository;
 import com.aleitox.recipe.repository.RecipeStepRepository;
@@ -54,6 +55,7 @@ public class RecipeService {
 
     private final RecipeRepository recipeRepository;
     private final IngredientRepository ingredientRepository;
+    private final IngredientUnitRepository ingredientUnitRepository;
     private final RecipeComponentRepository recipeComponentRepository;
     private final RecipeStepRepository recipeStepRepository;
     private final RecipeTagRepository recipeTagRepository;
@@ -64,6 +66,7 @@ public class RecipeService {
 
     public RecipeService(RecipeRepository recipeRepository,
                          IngredientRepository ingredientRepository,
+                         IngredientUnitRepository ingredientUnitRepository,
                          RecipeComponentRepository recipeComponentRepository,
                          RecipeStepRepository recipeStepRepository,
                          RecipeTagRepository recipeTagRepository,
@@ -73,6 +76,7 @@ public class RecipeService {
                          TagMapper tagMapper) {
         this.recipeRepository = recipeRepository;
         this.ingredientRepository = ingredientRepository;
+        this.ingredientUnitRepository = ingredientUnitRepository;
         this.recipeComponentRepository = recipeComponentRepository;
         this.recipeStepRepository = recipeStepRepository;
         this.recipeTagRepository = recipeTagRepository;
@@ -85,6 +89,7 @@ public class RecipeService {
     @Transactional
     public RecipeResponseDto create(RecipeRequestDto request) {
         validateDuplicateComponents(request.components());
+        validateComponentUnits(request.components());
         validateDuplicateStepOrders(request.steps());
 
         LocalDateTime now = LocalDateTime.now();
@@ -156,6 +161,7 @@ public class RecipeService {
     @Transactional
     public RecipeResponseDto update(Integer id, RecipeRequestDto request) {
         validateDuplicateComponents(request.components());
+        validateComponentUnits(request.components());
         validateDuplicateStepOrders(request.steps());
 
         RecipeEntity existing = findRecipeById(id);
@@ -351,6 +357,53 @@ public class RecipeService {
         }
     }
 
+    private void validateComponentUnits(List<RecipeComponentRequestDto> components) {
+        for (RecipeComponentRequestDto component : components) {
+            if (component.componentType() == RecipeComponentType.INGREDIENT) {
+                validateIngredientComponentUnit(component.ingredientId(), component.unit());
+            } else {
+                validateNestedRecipeComponentUnit(component.unit());
+            }
+        }
+    }
+
+    private void validateIngredientComponentUnit(Integer ingredientId, String unit) {
+        if (unit == null || unit.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unit is required for recipe components");
+        }
+        String normalizedUnit = unit.strip();
+        if (isMassOrVolumeUnit(normalizedUnit)) {
+            return;
+        }
+        if ("batch".equalsIgnoreCase(normalizedUnit)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Unit \"batch\" is only valid for nested recipe components");
+        }
+        if (!ingredientUnitRepository.existsByIngredientIdAndUnitNormalized(ingredientId, normalizedUnit)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "No grams-per-unit conversion for ingredient id " + ingredientId + " and unit \"" + unit + "\"");
+        }
+    }
+
+    private void validateNestedRecipeComponentUnit(String unit) {
+        if (unit == null || unit.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unit is required for recipe components");
+        }
+        String normalizedUnit = unit.strip();
+        if (isMassOrVolumeUnit(normalizedUnit) || "batch".equalsIgnoreCase(normalizedUnit)) {
+            return;
+        }
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Unsupported unit for nested recipe component: \"" + unit + "\" (expected g, ml, or batch)");
+    }
+
+    private static boolean isMassOrVolumeUnit(String unit) {
+        return "g".equalsIgnoreCase(unit) || "ml".equalsIgnoreCase(unit);
+    }
+
     private void validateRecipeComponentDoesNotExist(Integer recipeId, RecipeComponentRequestDto request) {
         validateRecipeComponentDoesNotExist(recipeId, request, null);
     }
@@ -412,12 +465,14 @@ public class RecipeService {
         entity.setUnit(request.unit());
 
         if (request.componentType() == RecipeComponentType.INGREDIENT) {
+            validateIngredientComponentUnit(request.ingredientId(), request.unit());
             IngredientEntity ingredient = findIngredientById(request.ingredientId());
             entity.setIngredient(ingredient);
             entity.setChildRecipe(null);
             return;
         }
 
+        validateNestedRecipeComponentUnit(request.unit());
         RecipeEntity childRecipe = findRecipeById(request.childRecipeId());
         validateChildRecipeReference(parentRecipeId, childRecipe.getId());
         entity.setChildRecipe(childRecipe);
@@ -559,7 +614,10 @@ public class RecipeService {
             if (component.getIngredient() == null) {
                 return BatchTotals.zero();
             }
-            BigDecimal grams = ingredientGrams(component.getQuantity(), component.getUnit());
+            BigDecimal grams = ingredientGrams(
+                    component.getQuantity(),
+                    component.getUnit(),
+                    component.getIngredient().getId());
             IngredientEntity ing = component.getIngredient();
             return new BatchTotals(
                     scalePer100g(ing.getCaloriesPer100g(), grams),
@@ -580,23 +638,30 @@ public class RecipeService {
             if ("batch".equalsIgnoreCase(unit.strip())) {
                 return childBatch.scale(qty);
             }
-            BigDecimal grams = ingredientGrams(qty, unit);
+            BigDecimal grams = ingredientGrams(qty, unit, null);
             return childBatch.scaleToMass(grams);
         }
         return BatchTotals.zero();
     }
 
-    private static BigDecimal ingredientGrams(BigDecimal quantity, String unit) {
+    private BigDecimal ingredientGrams(BigDecimal quantity, String unit, Integer ingredientId) {
         if (quantity == null || unit == null) {
             return BigDecimal.ZERO;
         }
-        String u = unit.strip();
-        if ("g".equalsIgnoreCase(u) || "ml".equalsIgnoreCase(u)) {
+        String normalizedUnit = unit.strip();
+        if (isMassOrVolumeUnit(normalizedUnit)) {
             return quantity;
         }
-        throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Unsupported recipe component unit for nutrition: \"" + unit + "\" (expected g, ml, or batch for nested recipes)");
+        if (ingredientId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Unsupported recipe component unit for nutrition: \"" + unit + "\" (expected g, ml, or batch for nested recipes)");
+        }
+        return ingredientUnitRepository.findByIngredientIdAndUnitNormalized(ingredientId, normalizedUnit)
+                .map(conversion -> quantity.multiply(conversion.getGramsPerUnit()))
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "No grams-per-unit conversion for ingredient id " + ingredientId + " and unit \"" + unit + "\""));
     }
 
     private static BigDecimal scalePer100g(BigDecimal per100g, BigDecimal grams) {
