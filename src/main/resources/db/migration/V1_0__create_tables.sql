@@ -21,6 +21,24 @@ CREATE TABLE ingredient (
     CONSTRAINT chk_ingredient_fats CHECK (fats_per_100g >= 0)
 );
 
+CREATE TABLE ingredient_unit (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ingredient_id INT NOT NULL,
+    unit VARCHAR(50) NOT NULL,
+    grams_per_unit DECIMAL(10,4) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_ingredient_unit_ingredient
+        FOREIGN KEY (ingredient_id) REFERENCES ingredient(id) ON DELETE CASCADE,
+
+    CONSTRAINT uq_ingredient_unit
+        UNIQUE (ingredient_id, unit),
+
+    CONSTRAINT chk_ingredient_unit_grams
+        CHECK (grams_per_unit > 0)
+);
+
 CREATE TABLE recipe (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -181,6 +199,9 @@ CREATE TABLE meal_entry_recipe (
 -- =============================
 -- INDEXES
 -- =============================
+
+CREATE INDEX idx_ingredient_unit_ingredient_id
+    ON ingredient_unit(ingredient_id);
 
 CREATE INDEX idx_recipe_component_recipe_id
     ON recipe_component(recipe_id);
