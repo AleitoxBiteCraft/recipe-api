@@ -152,6 +152,105 @@ class MealEntryServiceIntegrationTest {
                 .hasMessageContaining("Meal entry not found");
     }
 
+    @Test
+    void getResolvedById_appliesAdjustmentsAndServingScale() {
+        var potato = ingredientService.create(new IngredientRequestDto(
+                "Potato for resolved meal",
+                new BigDecimal("77.00"),
+                new BigDecimal("2.00"),
+                new BigDecimal("17.00"),
+                new BigDecimal("0.10"),
+                null,
+                List.of()));
+        var cream = ingredientService.create(new IngredientRequestDto(
+                "Cream for resolved meal",
+                new BigDecimal("340.00"),
+                new BigDecimal("2.00"),
+                new BigDecimal("4.00"),
+                new BigDecimal("36.00"),
+                null,
+                List.of()));
+        var recipe = recipeService.create(new RecipeRequestDto(
+                "Resolved mash",
+                null,
+                4,
+                List.of(
+                        new RecipeComponentRequestDto(
+                                RecipeComponentType.INGREDIENT,
+                                potato.id(),
+                                null,
+                                new BigDecimal("500.00"),
+                                "g"),
+                        new RecipeComponentRequestDto(
+                                RecipeComponentType.INGREDIENT,
+                                cream.id(),
+                                null,
+                                new BigDecimal("50.00"),
+                                "ml")),
+                List.of()));
+        var dish = dishService.create(new DishRequestDto("Resolved mash plate", null));
+        var mealEntry = saveMealEntry(dish.id(), LocalDateTime.of(2026, 5, 18, 18, 0), null);
+
+        RecipeComponentEntity potatoComponent = recipeComponentRepository
+                .findByRecipeIdWithReferencesOrderByIdAsc(recipe.id()).stream()
+                .filter(component -> potato.id().equals(component.getIngredient().getId()))
+                .findFirst()
+                .orElseThrow();
+        RecipeEntity recipeEntity = recipeRepository.findById(recipe.id()).orElseThrow();
+        DishEntity dishEntity = dishRepository.findById(dish.id()).orElseThrow();
+        MealEntryEntity mealEntryEntity = mealEntryRepository.findById(mealEntry.getId()).orElseThrow();
+
+        LocalDateTime now = LocalDateTime.now();
+        MealEntryRecipeEntity mealEntryRecipe = new MealEntryRecipeEntity();
+        mealEntryRecipe.setMealEntry(mealEntryEntity);
+        mealEntryRecipe.setRecipe(recipeEntity);
+        mealEntryRecipe.setServingAmount(new BigDecimal("2.00"));
+        mealEntryRecipe.setCreatedAt(now);
+        mealEntryRecipe.setUpdatedAt(now);
+        mealEntryRecipe = mealEntryRecipeRepository.save(mealEntryRecipe);
+
+        MealEntryRecipeAdjustmentEntity removeCream = new MealEntryRecipeAdjustmentEntity();
+        removeCream.setMealEntryRecipe(mealEntryRecipe);
+        removeCream.setAdjustmentType(MealEntryRecipeAdjustmentType.REMOVE);
+        removeCream.setRecipeComponent(
+                recipeComponentRepository.findByRecipeIdWithReferencesOrderByIdAsc(recipe.id()).stream()
+                        .filter(component -> cream.id().equals(component.getIngredient().getId()))
+                        .findFirst()
+                        .orElseThrow());
+        removeCream.setCreatedAt(now);
+        removeCream.setUpdatedAt(now);
+        mealEntryRecipeAdjustmentRepository.save(removeCream);
+
+        MealEntryRecipeAdjustmentEntity removePotatoCatalog = new MealEntryRecipeAdjustmentEntity();
+        removePotatoCatalog.setMealEntryRecipe(mealEntryRecipe);
+        removePotatoCatalog.setAdjustmentType(MealEntryRecipeAdjustmentType.REMOVE);
+        removePotatoCatalog.setRecipeComponent(potatoComponent);
+        removePotatoCatalog.setCreatedAt(now);
+        removePotatoCatalog.setUpdatedAt(now);
+        mealEntryRecipeAdjustmentRepository.save(removePotatoCatalog);
+
+        MealEntryRecipeAdjustmentEntity addPotato = new MealEntryRecipeAdjustmentEntity();
+        addPotato.setMealEntryRecipe(mealEntryRecipe);
+        addPotato.setAdjustmentType(MealEntryRecipeAdjustmentType.ADD);
+        addPotato.setComponentType(RecipeComponentType.INGREDIENT);
+        addPotato.setIngredient(potatoComponent.getIngredient());
+        addPotato.setQuantity(new BigDecimal("300.00"));
+        addPotato.setUnit("g");
+        addPotato.setCreatedAt(now);
+        addPotato.setUpdatedAt(now);
+        mealEntryRecipeAdjustmentRepository.save(addPotato);
+
+        var resolved = mealEntryService.getResolvedById(mealEntry.getId());
+
+        assertThat(resolved.recipes()).hasSize(1);
+        var components = resolved.recipes().getFirst().components();
+        assertThat(components).hasSize(1);
+        assertThat(components.getFirst().ingredientName()).isEqualTo("Potato for resolved meal");
+        assertThat(components.getFirst().quantity()).isEqualByComparingTo("150.00");
+        assertThat(components.stream().map(c -> c.ingredientName()))
+                .doesNotContain("Cream for resolved meal");
+    }
+
     private MealEntryEntity saveMealEntry(Integer dishId, LocalDateTime eatenAt, String notes) {
         DishEntity dish = dishRepository.findById(dishId).orElseThrow();
         LocalDateTime now = LocalDateTime.now();

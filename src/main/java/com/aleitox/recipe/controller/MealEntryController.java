@@ -1,6 +1,7 @@
 package com.aleitox.recipe.controller;
 
 import com.aleitox.recipe.dto.MealEntryDetailResponseDto;
+import com.aleitox.recipe.dto.MealEntryResolvedResponseDto;
 import com.aleitox.recipe.dto.MealEntryResponseDto;
 import com.aleitox.recipe.service.MealEntryService;
 import org.springframework.http.ResponseEntity;
@@ -29,5 +30,10 @@ public class MealEntryController {
     @GetMapping("/{id}")
     public ResponseEntity<MealEntryDetailResponseDto> getById(@PathVariable("id") Integer id) {
         return ResponseEntity.ok(mealEntryService.getById(id));
+    }
+
+    @GetMapping("/{id}/resolved")
+    public ResponseEntity<MealEntryResolvedResponseDto> getResolvedById(@PathVariable("id") Integer id) {
+        return ResponseEntity.ok(mealEntryService.getResolvedById(id));
     }
 }

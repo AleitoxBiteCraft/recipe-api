@@ -3,6 +3,8 @@ package com.aleitox.recipe.repository;
 import com.aleitox.recipe.domain.RecipeComponentType;
 import com.aleitox.recipe.entity.RecipeComponentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -11,6 +13,15 @@ import java.util.Optional;
 @Repository
 public interface RecipeComponentRepository extends JpaRepository<RecipeComponentEntity, Integer> {
     List<RecipeComponentEntity> findByRecipeId(Integer recipeId);
+
+    @Query("""
+            SELECT rc FROM RecipeComponentEntity rc
+            LEFT JOIN FETCH rc.ingredient
+            LEFT JOIN FETCH rc.childRecipe
+            WHERE rc.recipe.id = :recipeId
+            ORDER BY rc.id
+            """)
+    List<RecipeComponentEntity> findByRecipeIdWithReferencesOrderByIdAsc(@Param("recipeId") Integer recipeId);
 
     Optional<RecipeComponentEntity> findByIdAndRecipeId(Integer id, Integer recipeId);
 
