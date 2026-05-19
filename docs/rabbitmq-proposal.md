@@ -1,6 +1,6 @@
 # RabbitMQ Integration Proposal (Guide / POC)
 
-This document proposes integrating **RabbitMQ** into `recipe-api` for asynchronous side effects after meal log writes. It is **not implemented** yet. Use it as the implementation plan for the messaging layer.
+This document describes **RabbitMQ** integration in `recipe-api` for asynchronous side effects after meal log writes. **Phase 1 (POC)** is implemented; phase 2+ items below remain future work.
 
 Related follow-ups (separate docs, later phases):
 
@@ -238,11 +238,11 @@ No MongoDB, no database writes, no retries beyond Spring AMQP defaults.
 
 ### Phase 1 — POC (this document)
 
-- [ ] `docker-compose.yml` with RabbitMQ
-- [ ] `spring-boot-starter-amqp` + `RabbitMqConfig`
-- [ ] `MealEntryEventPublisher` + after-commit hook on create
-- [ ] Nutrition calculation for event payload (extract from `RecipeService` if needed)
-- [ ] Fanout exchange + `meal-entry.poc` queue + INFO listener
+- [x] `docker-compose.yml` with RabbitMQ
+- [x] `spring-boot-starter-amqp` + `RabbitMqConfig`
+- [x] `MealEntryEventPublisher` + after-commit hook on create
+- [x] Nutrition calculation for event payload (`MealEntryNutritionCalculator`)
+- [x] Fanout exchange + `meal-entry.poc` queue + INFO listener
 - [ ] Manual test: create meal entry → see log line and message in Management UI
 
 ### Phase 2 — Fanout expansion

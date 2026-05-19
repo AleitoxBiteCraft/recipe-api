@@ -22,6 +22,7 @@ import com.aleitox.recipe.mapper.MealEntryMapper;
 import com.aleitox.recipe.mapper.MealEntryRecipeAdjustmentMapper;
 import com.aleitox.recipe.mapper.MealEntryRecipeMapper;
 import com.aleitox.recipe.mapper.MealEntryResolvedMapper;
+import com.aleitox.recipe.messaging.event.MealEntryCreatedNotification;
 import com.aleitox.recipe.repository.DishRecipeRepository;
 import com.aleitox.recipe.repository.DishRepository;
 import com.aleitox.recipe.repository.IngredientRepository;
@@ -31,6 +32,7 @@ import com.aleitox.recipe.repository.MealEntryRecipeRepository;
 import com.aleitox.recipe.repository.MealEntryRepository;
 import com.aleitox.recipe.repository.RecipeComponentRepository;
 import com.aleitox.recipe.repository.RecipeRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +64,7 @@ public class MealEntryService {
     private final MealEntryRecipeAdjustmentMapper mealEntryRecipeAdjustmentMapper;
     private final MealEntryResolvedMapper mealEntryResolvedMapper;
     private final MealEntryRecipeCompositionResolver compositionResolver;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public MealEntryService(MealEntryRepository mealEntryRepository,
                             MealEntryRecipeRepository mealEntryRecipeRepository,
@@ -76,7 +79,8 @@ public class MealEntryService {
                             MealEntryRecipeMapper mealEntryRecipeMapper,
                             MealEntryRecipeAdjustmentMapper mealEntryRecipeAdjustmentMapper,
                             MealEntryResolvedMapper mealEntryResolvedMapper,
-                            MealEntryRecipeCompositionResolver compositionResolver) {
+                            MealEntryRecipeCompositionResolver compositionResolver,
+                            ApplicationEventPublisher applicationEventPublisher) {
         this.mealEntryRepository = mealEntryRepository;
         this.mealEntryRecipeRepository = mealEntryRecipeRepository;
         this.mealEntryRecipeAdjustmentRepository = mealEntryRecipeAdjustmentRepository;
@@ -91,6 +95,7 @@ public class MealEntryService {
         this.mealEntryRecipeAdjustmentMapper = mealEntryRecipeAdjustmentMapper;
         this.mealEntryResolvedMapper = mealEntryResolvedMapper;
         this.compositionResolver = compositionResolver;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     public List<MealEntryResponseDto> getAll() {
@@ -167,7 +172,9 @@ public class MealEntryService {
             }
         }
 
-        return getById(savedEntry.getId());
+        MealEntryDetailResponseDto created = getById(savedEntry.getId());
+        applicationEventPublisher.publishEvent(new MealEntryCreatedNotification(savedEntry.getId()));
+        return created;
     }
 
     @Transactional
