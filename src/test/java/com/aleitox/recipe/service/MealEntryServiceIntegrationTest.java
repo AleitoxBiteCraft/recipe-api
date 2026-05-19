@@ -4,14 +4,19 @@ import com.aleitox.recipe.domain.MealEntryRecipeAdjustmentType;
 import com.aleitox.recipe.domain.RecipeComponentType;
 import com.aleitox.recipe.dto.DishRequestDto;
 import com.aleitox.recipe.dto.IngredientRequestDto;
+import com.aleitox.recipe.dto.MealEntryRecipeAdjustmentRequestDto;
+import com.aleitox.recipe.dto.MealEntryRecipeRequestDto;
+import com.aleitox.recipe.dto.MealEntryRequestDto;
 import com.aleitox.recipe.dto.RecipeComponentRequestDto;
 import com.aleitox.recipe.dto.RecipeRequestDto;
 import com.aleitox.recipe.entity.DishEntity;
+import com.aleitox.recipe.entity.DishRecipeEntity;
 import com.aleitox.recipe.entity.MealEntryEntity;
 import com.aleitox.recipe.entity.MealEntryRecipeAdjustmentEntity;
 import com.aleitox.recipe.entity.MealEntryRecipeEntity;
 import com.aleitox.recipe.entity.RecipeComponentEntity;
 import com.aleitox.recipe.entity.RecipeEntity;
+import com.aleitox.recipe.repository.DishRecipeRepository;
 import com.aleitox.recipe.repository.DishRepository;
 import com.aleitox.recipe.repository.MealEntryRecipeAdjustmentRepository;
 import com.aleitox.recipe.repository.MealEntryRecipeRepository;
@@ -51,6 +56,9 @@ class MealEntryServiceIntegrationTest {
 
     @Autowired
     private DishRepository dishRepository;
+
+    @Autowired
+    private DishRecipeRepository dishRecipeRepository;
 
     @Autowired
     private RecipeRepository recipeRepository;
@@ -249,6 +257,150 @@ class MealEntryServiceIntegrationTest {
         assertThat(components.getFirst().quantity()).isEqualByComparingTo("150.00");
         assertThat(components.stream().map(c -> c.ingredientName()))
                 .doesNotContain("Cream for resolved meal");
+    }
+
+    @Test
+    void create_withoutRecipes_copiesDishTemplateWithDefaultServing() {
+        var recipe = recipeService.create(new RecipeRequestDto(
+                "Meal entry template recipe",
+                null,
+                2,
+                List.of(),
+                List.of()));
+        var dish = dishService.create(new DishRequestDto("Meal entry template dish", null));
+        linkDishRecipe(dish.id(), recipe.id());
+
+        var created = mealEntryService.create(new MealEntryRequestDto(
+                dish.id(),
+                LocalDateTime.of(2026, 5, 19, 13, 0),
+                "Lunch",
+                null));
+
+        assertThat(created.dishId()).isEqualTo(dish.id());
+        assertThat(created.recipes()).hasSize(1);
+        assertThat(created.recipes().getFirst().recipeId()).isEqualTo(recipe.id());
+        assertThat(created.recipes().getFirst().servingAmount()).isEqualByComparingTo("1.00");
+        assertThat(created.recipes().getFirst().adjustments()).isEmpty();
+    }
+
+    @Test
+    void create_withAdjustments_persistsRemoveAndAdd() {
+        var potato = ingredientService.create(new IngredientRequestDto(
+                "Create meal potato",
+                new BigDecimal("77.00"),
+                new BigDecimal("2.00"),
+                new BigDecimal("17.00"),
+                new BigDecimal("0.10"),
+                null,
+                List.of()));
+        var recipe = recipeService.create(new RecipeRequestDto(
+                "Create meal mash",
+                null,
+                4,
+                List.of(new RecipeComponentRequestDto(
+                        RecipeComponentType.INGREDIENT,
+                        potato.id(),
+                        null,
+                        new BigDecimal("400.00"),
+                        "g")),
+                List.of()));
+        var dish = dishService.create(new DishRequestDto("Create meal dish", null));
+        linkDishRecipe(dish.id(), recipe.id());
+
+        var potatoComponent = recipeComponentRepository.findByRecipeId(recipe.id()).getFirst();
+
+        var created = mealEntryService.create(new MealEntryRequestDto(
+                dish.id(),
+                LocalDateTime.of(2026, 5, 19, 14, 0),
+                "Scaled portion",
+                List.of(new MealEntryRecipeRequestDto(
+                        recipe.id(),
+                        new BigDecimal("2.00"),
+                        List.of(
+                                new MealEntryRecipeAdjustmentRequestDto(
+                                        MealEntryRecipeAdjustmentType.REMOVE,
+                                        potatoComponent.getId(),
+                                        null, null, null, null, null),
+                                new MealEntryRecipeAdjustmentRequestDto(
+                                        MealEntryRecipeAdjustmentType.ADD,
+                                        null,
+                                        RecipeComponentType.INGREDIENT,
+                                        potato.id(),
+                                        null,
+                                        new BigDecimal("250.00"),
+                                        "g"))))));
+
+        assertThat(created.recipes()).hasSize(1);
+        assertThat(created.recipes().getFirst().adjustments()).hasSize(2);
+
+        var resolved = mealEntryService.getResolvedById(created.id());
+        assertThat(resolved.recipes().getFirst().components()).hasSize(1);
+        assertThat(resolved.recipes().getFirst().components().getFirst().quantity())
+                .isEqualByComparingTo("125.00");
+    }
+
+    @Test
+    void create_rejectsRecipeNotLinkedToDish() {
+        var onDish = recipeService.create(new RecipeRequestDto(
+                "On dish",
+                null,
+                1,
+                List.of(),
+                List.of()));
+        var other = recipeService.create(new RecipeRequestDto(
+                "Other recipe",
+                null,
+                1,
+                List.of(),
+                List.of()));
+        var dish = dishService.create(new DishRequestDto("Single recipe dish", null));
+        linkDishRecipe(dish.id(), onDish.id());
+
+        assertThatThrownBy(() -> mealEntryService.create(new MealEntryRequestDto(
+                dish.id(),
+                LocalDateTime.now(),
+                null,
+                List.of(new MealEntryRecipeRequestDto(
+                        other.id(),
+                        new BigDecimal("1.00"),
+                        List.of())))))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("not linked to the selected dish");
+    }
+
+    @Test
+    void create_rejectsUnknownDish() {
+        assertThatThrownBy(() -> mealEntryService.create(new MealEntryRequestDto(
+                999_999,
+                LocalDateTime.now(),
+                null,
+                null)))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Dish not found");
+    }
+
+    @Test
+    void delete_removesMealEntry() {
+        var dish = dishService.create(new DishRequestDto("Delete meal dish", null));
+        var mealEntry = saveMealEntry(dish.id(), LocalDateTime.now(), null);
+
+        mealEntryService.delete(mealEntry.getId());
+
+        assertThat(mealEntryRepository.existsById(mealEntry.getId())).isFalse();
+        assertThatThrownBy(() -> mealEntryService.getById(mealEntry.getId()))
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
+    private void linkDishRecipe(Integer dishId, Integer recipeId) {
+        DishEntity dish = dishRepository.findById(dishId).orElseThrow();
+        RecipeEntity recipe = recipeRepository.findById(recipeId).orElseThrow();
+        LocalDateTime now = LocalDateTime.now();
+        DishRecipeEntity link = new DishRecipeEntity();
+        link.setDish(dish);
+        link.setRecipe(recipe);
+        link.setCreatedAt(now);
+        link.setUpdatedAt(now);
+        dishRecipeRepository.save(link);
     }
 
     private MealEntryEntity saveMealEntry(Integer dishId, LocalDateTime eatenAt, String notes) {
