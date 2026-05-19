@@ -1,13 +1,22 @@
 # Schema Evolution Proposal (Guide / Technical Debt)
 
-This document proposes a future schema evolution for recipes metadata and search.
-It is intentionally **not implemented** yet. Use it as a reference for future Flyway migrations.
+This document proposes **future** schema evolution not yet in Flyway.
+
+**Implemented in `V1_0__create_tables.sql`:** full meal log (`meal_entry`, `meal_entry_recipe`, `meal_entry_recipe_adjustment`). Behavior and use cases are documented in [`database-schema.md`](database-schema.md#meal-log--use-cases).
 
 ## Goals
 
 - Keep current model stable while loading recipes.
 - Avoid duplicate records (recipes and relations).
 - Add metadata for discoverability and procurement.
+
+## Meal log — possible follow-ups (not implemented)
+
+| Idea | Notes |
+|------|--------|
+| `MODIFY` adjustment | Change `quantity`/`unit` of an existing `recipe_component` in one row instead of REMOVE + ADD |
+| Catalog alternatives | Optional ingredient groups on `recipe_component` (e.g. milk \| cream) reused across recipes |
+| Promote variant to `dish` | UX flow: save a frequent meal composition as a new dish template — no extra tables required initially |
 
 ## 1) Cooking Courses (Recipe Origin)
 

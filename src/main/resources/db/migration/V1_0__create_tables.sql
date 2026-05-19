@@ -167,7 +167,7 @@ CREATE TABLE dish_recipe (
 
 CREATE TABLE meal_entry (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    dish_id INT NULL,
+    dish_id INT NOT NULL,
     eaten_at DATETIME NOT NULL,
     notes TEXT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -181,19 +181,82 @@ CREATE TABLE meal_entry_recipe (
     id INT AUTO_INCREMENT PRIMARY KEY,
     meal_entry_id INT NOT NULL,
     recipe_id INT NOT NULL,
-    quantity DECIMAL(10,2) NOT NULL,
-    unit VARCHAR(50) NOT NULL DEFAULT 'g',
+    serving_amount DECIMAL(10,2) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_meal_entry_recipe_meal_entry
-        FOREIGN KEY (meal_entry_id) REFERENCES meal_entry(id),
+        FOREIGN KEY (meal_entry_id) REFERENCES meal_entry(id) ON DELETE CASCADE,
 
     CONSTRAINT fk_meal_entry_recipe_recipe
         FOREIGN KEY (recipe_id) REFERENCES recipe(id),
 
-    CONSTRAINT chk_meal_entry_recipe_quantity
-        CHECK (quantity > 0)
+    CONSTRAINT chk_meal_entry_recipe_serving_amount
+        CHECK (serving_amount > 0)
+);
+
+CREATE TABLE meal_entry_recipe_adjustment (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    meal_entry_recipe_id INT NOT NULL,
+    adjustment_type VARCHAR(10) NOT NULL,
+    recipe_component_id INT NULL,
+    component_type VARCHAR(20) NULL,
+    ingredient_id INT NULL,
+    child_recipe_id INT NULL,
+    quantity DECIMAL(10,2) NULL,
+    unit VARCHAR(50) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_meal_entry_recipe_adjustment_meal_entry_recipe
+        FOREIGN KEY (meal_entry_recipe_id) REFERENCES meal_entry_recipe(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_meal_entry_recipe_adjustment_recipe_component
+        FOREIGN KEY (recipe_component_id) REFERENCES recipe_component(id) ON DELETE RESTRICT,
+
+    CONSTRAINT fk_meal_entry_recipe_adjustment_ingredient
+        FOREIGN KEY (ingredient_id) REFERENCES ingredient(id),
+
+    CONSTRAINT fk_meal_entry_recipe_adjustment_child_recipe
+        FOREIGN KEY (child_recipe_id) REFERENCES recipe(id),
+
+    CONSTRAINT chk_meal_entry_recipe_adjustment_type
+        CHECK (adjustment_type IN ('ADD', 'REMOVE')),
+
+    CONSTRAINT chk_meal_entry_recipe_adjustment_remove
+        CHECK (
+            adjustment_type <> 'REMOVE'
+            OR (
+                recipe_component_id IS NOT NULL
+                AND component_type IS NULL
+                AND ingredient_id IS NULL
+                AND child_recipe_id IS NULL
+                AND quantity IS NULL
+                AND unit IS NULL
+            )
+        ),
+
+    CONSTRAINT chk_meal_entry_recipe_adjustment_add
+        CHECK (
+            adjustment_type <> 'ADD'
+            OR (
+                recipe_component_id IS NULL
+                AND component_type IN ('INGREDIENT', 'RECIPE')
+                AND quantity IS NOT NULL
+                AND quantity > 0
+                AND unit IS NOT NULL
+            )
+        ),
+
+    CONSTRAINT chk_meal_entry_recipe_adjustment_add_reference
+        CHECK (
+            adjustment_type <> 'ADD'
+            OR (
+                (component_type = 'INGREDIENT' AND ingredient_id IS NOT NULL AND child_recipe_id IS NULL)
+                OR
+                (component_type = 'RECIPE' AND ingredient_id IS NULL AND child_recipe_id IS NOT NULL)
+            )
+        )
 );
 
 -- =============================
@@ -238,3 +301,9 @@ CREATE INDEX idx_meal_entry_recipe_meal_entry_id
 
 CREATE INDEX idx_meal_entry_recipe_recipe_id
     ON meal_entry_recipe(recipe_id);
+
+CREATE INDEX idx_meal_entry_recipe_adjustment_meal_entry_recipe_id
+    ON meal_entry_recipe_adjustment(meal_entry_recipe_id);
+
+CREATE INDEX idx_meal_entry_recipe_adjustment_recipe_component_id
+    ON meal_entry_recipe_adjustment(recipe_component_id);

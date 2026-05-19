@@ -22,4 +22,6 @@ public interface DishRecipeRepository extends JpaRepository<DishRecipeEntity, In
     long sumServingsByDishId(@Param("dishId") Integer dishId);
 
     void deleteByDish_Id(Integer dishId);
+
+    boolean existsByDish_IdAndRecipe_Id(Integer dishId, Integer recipeId);
 }
