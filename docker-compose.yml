@@ -1,0 +1,17 @@
+# Broker para depurar la API en el host (Cursor / bootRun). Puertos 5672 / 15672.
+# El stack recipe-infra usa otro RabbitMQ en 5673 / 15673 y perfil Spring "docker".
+
+services:
+  rabbitmq:    image: rabbitmq:3.13-management
+    container_name: recipe-api-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  rabbitmq_data:
