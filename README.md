@@ -57,16 +57,10 @@ Flyway runs migrations on application startup.
 
 The app expects RabbitMQ when `app.rabbitmq.enabled=true` (default in local `application.properties`).
 
-**Start the broker** from the repository root:
+**Debug / IDE (this repo’s `docker-compose.yml`):** broker dedicated to running the API on the host (Cursor, `bootRun`, etc.).
 
 ```bash
 docker compose up -d rabbitmq
-```
-
-**Check status:**
-
-```bash
-docker compose ps
 ```
 
 | Service | URL / port |
@@ -74,6 +68,14 @@ docker compose ps
 | AMQP | `localhost:5672` |
 | Management UI | http://localhost:15672 |
 | Default user / password | `guest` / `guest` |
+
+**Full stack in Docker (`recipe-infra`):** separate broker on host ports **5673** / **15673** so it does not clash with debug. The API container uses Spring profile **`docker`** (`application-docker.properties`: host `rabbitmq`, port `5672` on the Compose network). See the `recipe-infra` README.
+
+**Check status (debug broker):**
+
+```bash
+docker compose ps
+```
 
 On first startup the app declares:
 
